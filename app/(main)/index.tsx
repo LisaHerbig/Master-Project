@@ -1,50 +1,94 @@
-/*import { StyleSheet, Text, View } from "react-native";*/
-import { useAuthContext } from "@/hooks/use-auth-context";
-import { supabase } from "@/lib/supabase";
-import { Stack } from "expo-router";
-import { Button, StyleSheet, Text, View } from "react-native";
+import { BookCard } from '@/components/molecules';
+import { Colors, Typography } from '@/constants/theme';
+import { useAuthContext } from '@/hooks/use-auth-context';
+import { useUnlockedBooks } from '@/hooks/use-unlocked-books';
+import { BOOKS } from '@/lib/books';
+import { router } from 'expo-router';
+import { Dimensions, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-console.log('supabase import in index:', supabase)
-console.log('supabase.auth in index:', supabase?.auth)
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const CARD_WIDTH = SCREEN_WIDTH - 64;
+const CARD_GAP = 16;
+const SIDE_PADDING = (SCREEN_WIDTH - CARD_WIDTH) / 2;
+const SNAP_INTERVAL = CARD_WIDTH + CARD_GAP;
 
 export default function HomeScreen() {
-  const {profile} = useAuthContext();
+  const { profile } = useAuthContext();
+  const { unlockedIds } = useUnlockedBooks();
 
-  async function onSignOutButtonPress() {
-     console.log('before signOut, supabase =', supabase)
-    console.log('before signOut, supabase.auth =', supabase?.auth)
+  const firstName = profile?.full_name?.split(' ')[0] ?? '';
 
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      console.error('Error signing out:', error.message);
-    }
-  };
   return (
-    <View>
-      <Stack.Screen options={{headerShown: true, title:'Welcome'}}/>
-      <Text>
-        {profile?.full_name}
-      </Text>
-      <Button title="Sign Out" onPress={onSignOutButtonPress}/>
-    </View>
+    <SafeAreaView style={styles.root}>
+      <View style={styles.header}>
+        <Text style={styles.greeting}>HALLO{firstName ? `, ${firstName.toUpperCase()}` : ''}</Text>
+        <Text style={styles.subtitle}>Deine Bücher – In Einer Welt Von Morgen</Text>
+        <Text style={styles.body}>
+          Entdecke exklusive Inhalte über die Geschichte, insbesondere die Welt und ihre Zukunft.
+        </Text>
+      </View>
+
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+        snapToInterval={SNAP_INTERVAL}
+        decelerationRate="fast"
+        style={styles.scroll}
+      >
+        {BOOKS.map((book) => (
+          <BookCard
+            key={book.id}
+            book={book}
+            isUnlocked={unlockedIds.has(book.id)}
+            width={CARD_WIDTH}
+            onPress={() => {
+              if (unlockedIds.has(book.id)) {
+                router.push(`/(main)/book/${book.id}` as any);
+              }
+            }}
+          />
+        ))}
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  root: {
+    flex: 1,
+    backgroundColor: Colors.colorLight,
   },
-  stepContainer: {
-    gap: 8,
+  header: {
+    paddingHorizontal: 32,
+    paddingTop: 40,
+    paddingBottom: 40,
+  },
+  greeting: {
+    fontFamily: 'EBGaramond_600SemiBold',
+    fontSize: 40,
+    lineHeight: 48,
+    color: Colors.colorDark,
     marginBottom: 8,
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  subtitle: {
+    fontFamily: 'EBGaramond_600SemiBold',
+    fontSize: 18,
+    lineHeight: 26,
+    color: Colors.colorDark,
+    marginBottom: 12,
+  },
+  body: {
+    ...Typography.b2Regular,
+    color: Colors.grey500,
+  },
+  scroll: {
+    flexGrow: 0,
+  },
+  scrollContent: {
+    paddingHorizontal: SIDE_PADDING,
+    gap: CARD_GAP,
+    paddingBottom: 40,
   },
 });

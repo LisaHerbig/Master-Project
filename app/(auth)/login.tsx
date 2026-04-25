@@ -6,12 +6,10 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import {
   ImageBackground,
-  Keyboard,
   KeyboardAvoidingView,
   Platform,
   StyleSheet,
   Text,
-  TouchableWithoutFeedback,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -72,9 +70,8 @@ export default function Login() {
           style={styles.flex}
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
-          <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-            <View style={styles.centered}>
-              <View style={styles.card}>
+          <View style={styles.centered}>
+            <View style={styles.card}>
                 <H3>WILLKOMMEN</H3>
                 <S2 style={styles.subtitle}>BITTE LOGGE DICH EIN</S2>
 
@@ -116,8 +113,7 @@ export default function Login() {
                   />
                 </View>
               </View>
-            </View>
-          </TouchableWithoutFeedback>
+          </View>
         </KeyboardAvoidingView>
       </SafeAreaView>
     </ImageBackground>

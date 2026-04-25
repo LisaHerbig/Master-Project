@@ -6,12 +6,10 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import {
   ImageBackground,
-  Keyboard,
   KeyboardAvoidingView,
   Platform,
   StyleSheet,
   Text,
-  TouchableWithoutFeedback,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -44,7 +42,6 @@ export default function Register() {
           style={styles.flex}
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
-          <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
           <View style={styles.centered}>
             <View style={styles.card}>
               <ProgressIndicator step={3} total={3} />
@@ -104,7 +101,6 @@ export default function Register() {
               </View>
             </View>
           </View>
-          </TouchableWithoutFeedback>
         </KeyboardAvoidingView>
       </SafeAreaView>
     </ImageBackground>
