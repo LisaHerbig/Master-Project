@@ -1,24 +1,56 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
+import { useAuthContext } from '@/hooks/use-auth-context';
+import { useOnboardingContext } from '@/hooks/use-onboarding-context';
+import AuthProvider from '@/providers/auth-provider';
+import OnboardingProvider from '@/providers/onboarding-provider';
+import { EBGaramond_600SemiBold, useFonts } from '@expo-google-fonts/eb-garamond';
 import { Stack } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import 'react-native-reanimated';
+import * as SplashScreen from 'expo-splash-screen';
+import { useEffect } from 'react';
+import { ActivityIndicator, View } from 'react-native';
 
-import { useColorScheme } from '@/hooks/use-color-scheme';
+SplashScreen.preventAutoHideAsync();
 
-export const unstable_settings = {
-  anchor: '(tabs)',
-};
+function RootNavigator() {
+  const { isLoggedIn, isLoading: authLoading } = useAuthContext();
+  const { hasSeenOnboarding, isChecked } = useOnboardingContext();
 
-export default function RootLayout() {
-  const colorScheme = useColorScheme();
+  if (authLoading || !isChecked) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator />
+      </View>
+    );
+  }
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
-      </Stack>
-      <StatusBar style="auto" />
-    </ThemeProvider>
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Protected guard={!hasSeenOnboarding}>
+        <Stack.Screen name="(onboarding)" />
+      </Stack.Protected>
+      <Stack.Protected guard={hasSeenOnboarding && !isLoggedIn}>
+        <Stack.Screen name="(auth)" />
+      </Stack.Protected>
+      <Stack.Protected guard={hasSeenOnboarding && isLoggedIn}>
+        <Stack.Screen name="(main)" />
+      </Stack.Protected>
+    </Stack>
+  );
+}
+
+export default function RootLayout() {
+  const [fontsLoaded] = useFonts({ EBGaramond_600SemiBold });
+
+  useEffect(() => {
+    if (fontsLoaded) SplashScreen.hideAsync();
+  }, [fontsLoaded]);
+
+  if (!fontsLoaded) return null;
+
+  return (
+    <OnboardingProvider>
+      <AuthProvider>
+        <RootNavigator />
+      </AuthProvider>
+    </OnboardingProvider>
   );
 }
