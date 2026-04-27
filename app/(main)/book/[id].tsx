@@ -4,6 +4,7 @@ import { Colors, Fonts } from '@/constants/theme';
 import { BOOKS } from '@/lib/books';
 import { getBookContent } from '@/lib/content';
 import { BulletPoint } from '@/lib/content/types';
+import { supabase } from '@/lib/supabase';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import {
@@ -30,6 +31,9 @@ export default function BookScreen() {
   const [aiOpen, setAiOpen] = useState(false);
   const [aiInput, setAiInput] = useState('');
   const [aiFocused, setAiFocused] = useState(false);
+  const [chatHistory, setChatHistory] = useState<{ role: 'user' | 'model'; text: string; isError?: boolean }[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const chatScrollRef = useRef<ScrollView>(null);
   const [highlightedSource, setHighlightedSource] = useState<number | null>(null);
 
   const scrollRef = useRef<ScrollView>(null);
@@ -63,6 +67,49 @@ export default function BookScreen() {
       (bullet.pages?.includes(filterNum) ?? false) ||
       (bullet.chapters?.includes(filterNum) ?? false)
     );
+  }
+
+  async function sendMessage() {
+    if (!aiInput.trim() || isLoading) return;
+    const userText = aiInput.trim();
+    setAiInput('');
+    setIsLoading(true);
+
+    const updatedHistory = [...chatHistory, { role: 'user' as const, text: userText }];
+    setChatHistory(updatedHistory);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('ai-chat', {
+        body: {
+          message: userText,
+          history: chatHistory,
+          bookTitle: book!.title,
+          seriesTitle: book!.seriesTitle,
+        },
+      });
+      if (error) {
+        let detail = error.message;
+        try {
+          const body = await (error as any).context?.json();
+          detail = body?.error ?? error.message;
+        } catch {}
+        throw new Error(detail);
+      }
+      if (!data?.text) {
+        console.error('Unexpected response:', JSON.stringify(data));
+        throw new Error('No text in response');
+      }
+      setChatHistory([...updatedHistory, { role: 'model', text: data.text }]);
+    } catch (err: any) {
+      console.error('AI chat error:', err?.message ?? err);
+      const errMsg = err?.message ?? '';
+      const displayText = errMsg.startsWith('Fehler:')
+        ? errMsg
+        : errMsg || 'Der KI-Assistent ist momentan nicht verfügbar. Bitte versuche es später erneut.';
+      setChatHistory([...updatedHistory, { role: 'model', text: displayText, isError: true }]);
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   function handleRefPress(refId: number) {
@@ -228,7 +275,10 @@ export default function BookScreen() {
           >
             <View style={styles.aiTitleRow}>
               <Icon name="ai" size="lg" color={Colors.colorDark} />
-              <Text style={styles.aiTitle}>KI-ASSISTENT</Text>
+              <View style={styles.flex}>
+                <Text style={styles.aiTitle}>KI-ASSISTENT</Text>
+                <Text style={styles.aiSubtitle}>Powered by Google Gemini 2.5 Flash · Nachrichten werden zur Verarbeitung an Google übermittelt.</Text>
+              </View>
             </View>
             <Icon
               name={aiOpen ? 'dropdown-opened' : 'dropdown-closed'}
@@ -239,21 +289,58 @@ export default function BookScreen() {
 
           {aiOpen && (
             <View style={styles.aiBody}>
-              <TextInput
-                style={[styles.aiInput, { borderColor: aiFocused ? book.accentColor : 'transparent' }]}
-                placeholder="Stelle eine Frage…"
-                placeholderTextColor={Colors.grey500}
-                value={aiInput}
-                onChangeText={setAiInput}
-                onFocus={() => setAiFocused(true)}
-                onBlur={() => setAiFocused(false)}
-                multiline
-              />
-              <TouchableOpacity
-                style={[styles.sendButton, { backgroundColor: book.accentColor }]}
-              >
-                <Icon name="send" size="md" color={Colors.white} />
-              </TouchableOpacity>
+              {chatHistory.length > 0 && (
+                <ScrollView
+                  ref={chatScrollRef}
+                  style={styles.chatMessages}
+                  onContentSizeChange={() => chatScrollRef.current?.scrollToEnd({ animated: true })}
+                  keyboardShouldPersistTaps="handled"
+                >
+                  {chatHistory.map((msg, i) => (
+                    <View
+                      key={i}
+                      style={[
+                        styles.messageBubble,
+                        msg.role === 'user'
+                          ? [styles.userBubble, { backgroundColor: book.accentColor }]
+                          : msg.isError
+                          ? styles.errorBubble
+                          : styles.modelBubble,
+                      ]}
+                    >
+                      <Text style={msg.role === 'user' ? styles.userText : styles.modelText}>
+                        {msg.text}
+                      </Text>
+                    </View>
+                  ))}
+                  {isLoading && (
+                    <View style={styles.modelBubble}>
+                      <Text style={styles.modelText}>…</Text>
+                    </View>
+                  )}
+                </ScrollView>
+              )}
+              <View style={styles.aiInputRow}>
+                <TextInput
+                  style={[styles.aiInput, { borderColor: aiFocused ? book.accentColor : 'transparent' }]}
+                  placeholder="Stelle eine Frage…"
+                  placeholderTextColor={Colors.grey500}
+                  value={aiInput}
+                  onChangeText={setAiInput}
+                  onFocus={() => setAiFocused(true)}
+                  onBlur={() => setAiFocused(false)}
+                  onSubmitEditing={sendMessage}
+                  returnKeyType="send"
+                  multiline
+                />
+                <TouchableOpacity
+                  style={[styles.sendButton, { backgroundColor: book.accentColor }, isLoading && styles.sendButtonDisabled]}
+                  onPress={sendMessage}
+                  disabled={isLoading}
+                >
+                  <Icon name="send" size="md" color={Colors.white} />
+                </TouchableOpacity>
+              </View>
             </View>
           )}
         </View>}
@@ -446,6 +533,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+    flex: 1,
+    marginRight: 12,
   },
   aiTitle: {
     fontFamily: Fonts.serif,
@@ -453,11 +542,55 @@ const styles = StyleSheet.create({
     letterSpacing: 1.5,
     color: Colors.colorDark,
   },
+  aiSubtitle: {
+    fontSize: 11,
+    color: Colors.grey500,
+    lineHeight: 15,
+    marginTop: 2,
+  },
   aiBody: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
     paddingHorizontal: 24,
     paddingBottom: 16,
+    gap: 10,
+  },
+  chatMessages: {
+    maxHeight: 200,
+    marginBottom: 4,
+  },
+  messageBubble: {
+    borderRadius: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    marginBottom: 6,
+    maxWidth: '85%',
+  },
+  userBubble: {
+    alignSelf: 'flex-end',
+    borderBottomRightRadius: 4,
+  },
+  modelBubble: {
+    alignSelf: 'flex-start',
+    backgroundColor: Colors.grey200,
+    borderBottomLeftRadius: 4,
+  },
+  errorBubble: {
+    alignSelf: 'flex-start',
+    backgroundColor: Colors.warning,
+    borderBottomLeftRadius: 4,
+  },
+  userText: {
+    fontSize: 14,
+    color: Colors.white,
+    lineHeight: 20,
+  },
+  modelText: {
+    fontSize: 14,
+    color: Colors.colorDark,
+    lineHeight: 20,
+  },
+  aiInputRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
     gap: 12,
   },
   aiInput: {
@@ -477,5 +610,8 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  sendButtonDisabled: {
+    opacity: 0.4,
   },
 });
