@@ -2,9 +2,10 @@ import { BookCard } from '@/components/molecules';
 import { Colors, Typography } from '@/constants/theme';
 import { useAuthContext } from '@/hooks/use-auth-context';
 import { useUnlockedBooks } from '@/hooks/use-unlocked-books';
-import { BOOKS } from '@/lib/books';
+import { Book, BOOKS } from '@/lib/books';
 import { router } from 'expo-router';
-import { Dimensions, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useRef, useState } from 'react';
+import { Dimensions, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -12,45 +13,87 @@ const CARD_WIDTH = SCREEN_WIDTH - 64;
 const CARD_GAP = 16;
 const SIDE_PADDING = (SCREEN_WIDTH - CARD_WIDTH) / 2;
 const SNAP_INTERVAL = CARD_WIDTH + CARD_GAP;
+const LOOPED_BOOKS = [...BOOKS, ...BOOKS, ...BOOKS];
+const INITIAL_OFFSET = BOOKS.length * SNAP_INTERVAL;
 
 export default function HomeScreen() {
   const { profile } = useAuthContext();
   const { unlockedIds } = useUnlockedBooks();
 
   const firstName = profile?.full_name?.split(' ')[0] ?? '';
+  const scrollRef = useRef<ScrollView>(null);
+  const [centeredBookId, setCenteredBookId] = useState(BOOKS[0].id);
+  const [bubbleBook, setBubbleBook] = useState<Book | null>(null);
 
   return (
     <SafeAreaView style={styles.root}>
       <View style={styles.header}>
         <Text style={styles.greeting}>HALLO{firstName ? `, ${firstName.toUpperCase()}` : ''}</Text>
-        <Text style={styles.subtitle}>Deine Bücher – In Einer Welt Von Morgen</Text>
+        <Text style={styles.subtitle}>DEINE BÜCHER – IN EINER WELT VON MORGEN</Text>
         <Text style={styles.body}>
           Entdecke exklusive Inhalte über die Geschichte, insbesondere die Welt und ihre Zukunft.
         </Text>
       </View>
 
+      {/* DEV ONLY */}
+      <TouchableOpacity
+        style={styles.testButton}
+        onPress={() => router.push({ pathname: '/(main)/unlocked', params: { bookId: String(centeredBookId) } } as any)}
+      >
+        <Text style={styles.testButtonLabel}>🧪 Test Unlock Screen</Text>
+      </TouchableOpacity>
+
       <ScrollView
+        ref={scrollRef}
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
+        contentOffset={{ x: INITIAL_OFFSET, y: 0 }}
         snapToInterval={SNAP_INTERVAL}
         decelerationRate="fast"
         style={styles.scroll}
+        onScrollBeginDrag={() => setBubbleBook(null)}
+        onMomentumScrollEnd={(e) => {
+          const offsetX = e.nativeEvent.contentOffset.x;
+          const index = Math.round(offsetX / SNAP_INTERVAL);
+          const bookIndex = ((index % BOOKS.length) + BOOKS.length) % BOOKS.length;
+          setCenteredBookId(BOOKS[bookIndex].id);
+
+          if (index < BOOKS.length) {
+            scrollRef.current?.scrollTo({ x: (index + BOOKS.length) * SNAP_INTERVAL, animated: false });
+          } else if (index >= BOOKS.length * 2) {
+            scrollRef.current?.scrollTo({ x: (index - BOOKS.length) * SNAP_INTERVAL, animated: false });
+          }
+        }}
       >
-        {BOOKS.map((book) => (
+        {LOOPED_BOOKS.map((book, i) => (
           <BookCard
-            key={book.id}
+            key={`${book.id}-${i}`}
             book={book}
             isUnlocked={unlockedIds.has(book.id)}
             width={CARD_WIDTH}
             onPress={() => {
               if (unlockedIds.has(book.id)) {
+                setBubbleBook(null);
                 router.push(`/(main)/book/${book.id}` as any);
+              } else {
+                setBubbleBook(prev => prev?.id === book.id ? null : book);
               }
             }}
           />
         ))}
       </ScrollView>
+
+      {bubbleBook && (
+        <View style={styles.bubbleWrapper}>
+          <View style={[styles.bubbleTail, { borderBottomColor: bubbleBook.accentColor }]} />
+          <View style={[styles.bubble, { borderColor: bubbleBook.accentColor, backgroundColor: bubbleBook.accentColor + '1F' }]}>
+            <Text style={styles.bubbleText}>
+              Dieser Inhalt ist noch nicht freigeschaltet. Scanne den Sticker im Buch mit deinem Smartphone, um den Inhalt freizuschalten.
+            </Text>
+          </View>
+        </View>
+      )}
     </SafeAreaView>
   );
 }
@@ -89,6 +132,44 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: SIDE_PADDING,
     gap: CARD_GAP,
-    paddingBottom: 40,
+    paddingBottom: 8,
+  },
+  bubbleWrapper: {
+    paddingHorizontal: SIDE_PADDING,
+    paddingTop: 8,
+    paddingBottom: 24,
+  },
+  bubbleTail: {
+    alignSelf: 'center',
+    width: 0,
+    height: 0,
+    borderLeftWidth: 11,
+    borderRightWidth: 11,
+    borderBottomWidth: 13,
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
+    marginBottom: -1,
+  },
+  bubble: {
+    borderWidth: 1.5,
+    borderRadius: 16,
+    padding: 16,
+  },
+  bubbleText: {
+    ...Typography.b2Regular,
+    color: Colors.colorDark,
+  },
+  testButton: {
+    marginHorizontal: 32,
+    marginBottom: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    backgroundColor: Colors.grey200,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  testButtonLabel: {
+    ...Typography.b3Medium,
+    color: Colors.grey600,
   },
 });

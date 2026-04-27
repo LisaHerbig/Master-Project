@@ -10,6 +10,7 @@ export interface Book {
   accentColor: string;
   pattern: PatternType;
   cover: ImageSourcePropType;
+  coverFull: ImageSourcePropType;
 }
 
 export const SERIES_TITLE = 'JENSEITS DES UNMÖGLICHEN';
@@ -22,6 +23,7 @@ export const BOOKS: Book[] = [
     accentColor: '#0000DC',
     pattern: 'wave',
     cover: require('@/assets/hands/Image1_hand-fahrwasser.png'),
+    coverFull: require('@/assets/covers/Image_cover-fahrwasser.png'),
   },
   {
     id: 2,
@@ -30,6 +32,7 @@ export const BOOKS: Book[] = [
     accentColor: '#5C00DC',
     pattern: 'lines',
     cover: require('@/assets/hands/Image2_hand-bodenwert.png'),
+    coverFull: require('@/assets/covers/Image_cover-bodenwert.png'),
   },
   {
     id: 3,
@@ -38,6 +41,7 @@ export const BOOKS: Book[] = [
     accentColor: '#00A3DC',
     pattern: 'dots',
     cover: require('@/assets/hands/Image3_hand-wagenburg.png'),
+    coverFull: require('@/assets/covers/Image_cover-wagenburg.png'),
   },
   {
     id: 4,
@@ -46,6 +50,7 @@ export const BOOKS: Book[] = [
     accentColor: '#0055DC',
     pattern: 'dashes',
     cover: require('@/assets/hands/Image4_hand-oase.png'),
+    coverFull: require('@/assets/covers/Image_cover-oase.png'),
   },
   {
     id: 5,
@@ -54,5 +59,6 @@ export const BOOKS: Book[] = [
     accentColor: Colors.secondary,
     pattern: 'diamonds',
     cover: require('@/assets/images/Image_welcome-hand.png'),
+    coverFull: require('@/assets/covers/Image_cover-schwamm.png'),
   },
 ];
