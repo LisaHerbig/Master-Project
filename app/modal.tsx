@@ -1,4 +1,4 @@
-import { Link } from 'expo-router';
+/*import { Link } from 'expo-router';
 import { StyleSheet } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
@@ -26,4 +26,9 @@ const styles = StyleSheet.create({
     marginTop: 15,
     paddingVertical: 15,
   },
-});
+});*/
+import { Stack } from "expo-router";
+
+export default function SomeName() {
+  return <Stack screenOptions={{ headerShown: false}} />;
+}
