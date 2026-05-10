@@ -3,6 +3,7 @@ import { Colors, Typography } from '@/constants/theme';
 import { useAuthContext } from '@/hooks/use-auth-context';
 import { useUnlockedBooks } from '@/hooks/use-unlocked-books';
 import { Book, BOOKS } from '@/lib/books';
+import { supabase } from '@/lib/supabase';
 import { router } from 'expo-router';
 import { useRef, useState } from 'react';
 import { Dimensions, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -28,7 +29,8 @@ export default function HomeScreen() {
   return (
     <SafeAreaView style={styles.root}>
       <View style={styles.header}>
-        <Text style={styles.greeting}>HALLO{firstName ? `, ${firstName.toUpperCase()}` : ''}</Text>
+        <Text style={styles.greeting}>HALLO{firstName ? ',' : ''}</Text>
+        {firstName ? <Text style={styles.greeting}>{firstName.toUpperCase()}</Text> : null}
         <Text style={styles.subtitle}>DEINE BÜCHER – IN EINER WELT VON MORGEN</Text>
         <Text style={styles.body}>
           Entdecke exklusive Inhalte über die Geschichte, insbesondere die Welt und ihre Zukunft.
@@ -36,12 +38,20 @@ export default function HomeScreen() {
       </View>
 
       {/* DEV ONLY */}
-      <TouchableOpacity
-        style={styles.testButton}
-        onPress={() => router.push({ pathname: '/(main)/unlocked', params: { bookId: String(centeredBookId) } } as any)}
-      >
-        <Text style={styles.testButtonLabel}>🧪 Test Unlock Screen</Text>
-      </TouchableOpacity>
+      <View style={styles.devRow}>
+        <TouchableOpacity
+          style={styles.testButton}
+          onPress={() => router.push({ pathname: '/(main)/unlocked', params: { bookId: String(centeredBookId) } } as any)}
+        >
+          <Text style={styles.testButtonLabel}>🧪 Test Unlock Screen</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.testButton}
+          onPress={() => supabase.auth.signOut()}
+        >
+          <Text style={styles.testButtonLabel}>🚪 Logout</Text>
+        </TouchableOpacity>
+      </View>
 
       <ScrollView
         ref={scrollRef}
@@ -159,9 +169,15 @@ const styles = StyleSheet.create({
     ...Typography.b2Regular,
     color: Colors.colorDark,
   },
-  testButton: {
+  devRow: {
+    flexDirection: 'row',
     marginHorizontal: 32,
     marginBottom: 12,
+    gap: 8,
+  },
+  testButton: {
+    flex: 1,
+    marginBottom: 0,
     paddingVertical: 10,
     paddingHorizontal: 16,
     backgroundColor: Colors.grey200,

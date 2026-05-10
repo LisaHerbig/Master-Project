@@ -8,8 +8,10 @@ import { supabase } from '@/lib/supabase';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import {
+  Animated,
   Image,
   KeyboardAvoidingView,
+  PanResponder,
   Platform,
   ScrollView,
   StyleSheet,
@@ -19,6 +21,9 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+
+const PANEL_CLOSED = 88;
+const PANEL_OPEN = 360;
 
 export default function BookScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -34,6 +39,58 @@ export default function BookScreen() {
   const [chatHistory, setChatHistory] = useState<{ role: 'user' | 'model'; text: string; isError?: boolean }[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const chatScrollRef = useRef<ScrollView>(null);
+
+  const panelH = useRef(new Animated.Value(PANEL_CLOSED)).current;
+  const dragStartPanelH = useRef(PANEL_CLOSED);
+  const maxPanelH = useRef(PANEL_OPEN);
+
+  function snapTo(target: number) {
+    if (target <= PANEL_CLOSED) {
+      Animated.spring(panelH, {
+        toValue: PANEL_CLOSED,
+        useNativeDriver: false,
+        damping: 22,
+        stiffness: 220,
+        mass: 0.8,
+      }).start(() => setAiOpen(false));
+    } else {
+      setAiOpen(true);
+      Animated.spring(panelH, {
+        toValue: target,
+        useNativeDriver: false,
+        damping: 22,
+        stiffness: 220,
+        mass: 0.8,
+      }).start();
+    }
+  }
+
+  function handleAiHeaderPress() {
+    snapTo(aiOpen ? PANEL_CLOSED : PANEL_OPEN);
+  }
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => false,
+      onMoveShouldSetPanResponder: (_, { dy }) => Math.abs(dy) > 5,
+      onPanResponderGrant: () => {
+        panelH.stopAnimation(v => { dragStartPanelH.current = v; });
+      },
+      onPanResponderMove: (_, { dy }) => {
+        panelH.setValue(Math.max(PANEL_CLOSED, Math.min(maxPanelH.current, dragStartPanelH.current - dy)));
+      },
+      onPanResponderRelease: (_, { dy, vy }) => {
+        const max = maxPanelH.current;
+        const cur = Math.max(PANEL_CLOSED, Math.min(max, dragStartPanelH.current - dy));
+        const SNAPS = [PANEL_CLOSED, PANEL_OPEN, max];
+        let target: number;
+        if (vy < -0.5) target = SNAPS.find(p => p > cur + 10) ?? max;
+        else if (vy > 0.5) target = [...SNAPS].reverse().find(p => p < cur - 10) ?? PANEL_CLOSED;
+        else target = SNAPS.reduce((a, b) => Math.abs(b - cur) < Math.abs(a - cur) ? b : a);
+        snapTo(target);
+      },
+    })
+  ).current;
   const [highlightedSource, setHighlightedSource] = useState<number | null>(null);
 
   const scrollRef = useRef<ScrollView>(null);
@@ -202,6 +259,11 @@ export default function BookScreen() {
           </TouchableOpacity>
         </View>
 
+        {/* ── CONTENT AREA (measured so AI panel never overflows) ── */}
+        <View
+          style={styles.flex}
+          onLayout={(e) => { maxPanelH.current = e.nativeEvent.layout.height; }}
+        >
         {/* ── SCROLLABLE CONTENT ── */}
         <ScrollView
           ref={scrollRef}
@@ -263,63 +325,71 @@ export default function BookScreen() {
             </View>
           )}
 
-          <View style={{ height: aiOpen ? 200 : 80 }} />
+          <View style={{ height: 320 }} />
         </ScrollView>
 
         {/* ── KI-ASSISTENT (fixed bottom) — hidden while search keyboard is open ── */}
-        {!searchFocused && <View style={[styles.aiContainer, { backgroundColor: accentMuted, borderTopColor: book.accentColor }]}>
-          <TouchableOpacity
-            style={styles.aiHeader}
-            onPress={() => setAiOpen((o) => !o)}
-            activeOpacity={0.8}
-          >
-            <View style={styles.aiTitleRow}>
-              <Icon name="ai" size="lg" color={Colors.colorDark} />
-              <View style={styles.flex}>
-                <Text style={styles.aiTitle}>KI-ASSISTENT</Text>
-                <Text style={styles.aiSubtitle}>Powered by Google Gemini 2.5 Flash · Nachrichten werden zur Verarbeitung an Google übermittelt.</Text>
-              </View>
-            </View>
-            <Icon
-              name={aiOpen ? 'dropdown-opened' : 'dropdown-closed'}
-              size="md"
-              color={Colors.colorDark}
-            />
-          </TouchableOpacity>
-
-          {aiOpen && (
-            <View style={styles.aiBody}>
-              {chatHistory.length > 0 && (
-                <ScrollView
-                  ref={chatScrollRef}
-                  style={styles.chatMessages}
-                  onContentSizeChange={() => chatScrollRef.current?.scrollToEnd({ animated: true })}
-                  keyboardShouldPersistTaps="handled"
-                >
-                  {chatHistory.map((msg, i) => (
-                    <View
-                      key={i}
-                      style={[
-                        styles.messageBubble,
-                        msg.role === 'user'
-                          ? [styles.userBubble, { backgroundColor: book.accentColor }]
-                          : msg.isError
-                          ? styles.errorBubble
-                          : styles.modelBubble,
-                      ]}
-                    >
-                      <Text style={msg.role === 'user' ? styles.userText : styles.modelText}>
-                        {msg.text}
-                      </Text>
-                    </View>
-                  ))}
-                  {isLoading && (
-                    <View style={styles.modelBubble}>
-                      <Text style={styles.modelText}>…</Text>
-                    </View>
-                  )}
-                </ScrollView>
+        {!searchFocused && (
+          <Animated.View style={[styles.aiContainer, { height: panelH, backgroundColor: accentMuted, borderTopColor: book.accentColor }]}>
+            <View {...(aiOpen ? panResponder.panHandlers : {})}>
+              {aiOpen && (
+                <View style={styles.aiDragHandleRow}>
+                  <View style={[styles.aiDragHandleBar, { backgroundColor: book.accentColor }]} />
+                </View>
               )}
+              <TouchableOpacity
+                style={styles.aiHeader}
+                onPress={handleAiHeaderPress}
+                activeOpacity={0.8}
+              >
+                <View style={styles.aiTitleRow}>
+                  <Icon name="ai" size="lg" color={Colors.colorDark} />
+                  <View style={styles.flex}>
+                    <Text style={styles.aiTitle}>KI-ASSISTENT</Text>
+                    <Text style={styles.aiSubtitle}>Powered by Google Gemini 2.5 Flash · Nachrichten werden zur Verarbeitung an Google übermittelt.</Text>
+                  </View>
+                </View>
+                <Icon
+                  name={aiOpen ? 'dropdown-opened' : 'dropdown-closed'}
+                  size="md"
+                  color={Colors.colorDark}
+                />
+              </TouchableOpacity>
+            </View>
+
+            {aiOpen && (
+              <ScrollView
+                ref={chatScrollRef}
+                style={styles.chatMessages}
+                onContentSizeChange={() => chatScrollRef.current?.scrollToEnd({ animated: true })}
+                keyboardShouldPersistTaps="handled"
+              >
+                {chatHistory.map((msg, i) => (
+                  <View
+                    key={i}
+                    style={[
+                      styles.messageBubble,
+                      msg.role === 'user'
+                        ? [styles.userBubble, { backgroundColor: book.accentColor }]
+                        : msg.isError
+                        ? styles.errorBubble
+                        : styles.modelBubble,
+                    ]}
+                  >
+                    <Text style={msg.role === 'user' ? styles.userText : styles.modelText}>
+                      {msg.text}
+                    </Text>
+                  </View>
+                ))}
+                {isLoading && (
+                  <View style={[styles.modelBubble, { backgroundColor: 'transparent' }]}>
+                    <Text style={styles.modelText}>…</Text>
+                  </View>
+                )}
+              </ScrollView>
+            )}
+
+            {aiOpen && (
               <View style={styles.aiInputRow}>
                 <TextInput
                   style={[styles.aiInput, { borderColor: aiFocused ? book.accentColor : 'transparent' }]}
@@ -341,9 +411,10 @@ export default function BookScreen() {
                   <Icon name="send" size="md" color={Colors.white} />
                 </TouchableOpacity>
               </View>
-            </View>
-          )}
-        </View>}
+            )}
+          </Animated.View>
+        )}
+        </View>
       </SafeAreaView>
     </KeyboardAvoidingView>
   );
@@ -360,14 +431,13 @@ const styles = StyleSheet.create({
 
   // Header
   header: {
-    paddingBottom: 8,
     overflow: 'hidden',
   },
   backButton: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 24,
-    paddingTop: 16,
+    paddingTop: 20,
     paddingBottom: 4,
     gap: 6,
   },
@@ -384,7 +454,7 @@ const styles = StyleSheet.create({
   headerText: {
     flex: 1,
     gap: 4,
-    paddingBottom: 8,
+    paddingBottom: 20,
   },
   seriesLabel: {
     fontFamily: Fonts.serif,
@@ -394,13 +464,14 @@ const styles = StyleSheet.create({
   },
   bookTitle: {
     fontFamily: Fonts.serif,
-    fontSize: 36,
-    lineHeight: 40,
+    fontSize: 28,
+    lineHeight: 32,
     color: Colors.colorDark,
   },
   handImage: {
-    width: 130,
-    height: 130,
+    width: 180,
+    height: 180,
+    marginTop: -40,
   },
 
   // Toolbar
@@ -521,6 +592,18 @@ const styles = StyleSheet.create({
   // KI-Assistent
   aiContainer: {
     borderTopWidth: 2,
+    overflow: 'hidden',
+  },
+  aiDragHandleRow: {
+    alignItems: 'center',
+    paddingTop: 8,
+    paddingBottom: 4,
+  },
+  aiDragHandleBar: {
+    width: 32,
+    height: 4,
+    borderRadius: 2,
+    opacity: 0.4,
   },
   aiHeader: {
     flexDirection: 'row',
@@ -548,14 +631,9 @@ const styles = StyleSheet.create({
     lineHeight: 15,
     marginTop: 2,
   },
-  aiBody: {
-    paddingHorizontal: 24,
-    paddingBottom: 16,
-    gap: 10,
-  },
   chatMessages: {
-    maxHeight: 200,
-    marginBottom: 4,
+    flex: 1,
+    paddingHorizontal: 24,
   },
   messageBubble: {
     borderRadius: 16,
@@ -570,7 +648,7 @@ const styles = StyleSheet.create({
   },
   modelBubble: {
     alignSelf: 'flex-start',
-    backgroundColor: Colors.grey200,
+    backgroundColor: Colors.colorLight,
     borderBottomLeftRadius: 4,
   },
   errorBubble: {
@@ -592,10 +670,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-end',
     gap: 12,
+    paddingHorizontal: 24,
+    paddingTop: 8,
+    paddingBottom: 16,
   },
   aiInput: {
     flex: 1,
-    backgroundColor: Colors.grey200,
+    backgroundColor: Colors.colorLight,
     borderRadius: 24,
     borderWidth: 1.5,
     paddingHorizontal: 14,

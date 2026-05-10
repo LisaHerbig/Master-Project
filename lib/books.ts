@@ -58,7 +58,7 @@ export const BOOKS: Book[] = [
     title: 'DER SCHWAMM',
     accentColor: Colors.secondary,
     pattern: 'diamonds',
-    cover: require('@/assets/images/Image_welcome-hand.png'),
+    cover: require('@/assets/hands/Image5_hand-schwamm.png'),
     coverFull: require('@/assets/covers/Image_cover-schwamm.png'),
   },
 ];
