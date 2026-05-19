@@ -31,6 +31,7 @@ export default function BookScreen() {
   const content = getBookContent(Number(id));
 
   const [filter, setFilter] = useState('');
+  const [searchMode, setSearchMode] = useState<'seite' | 'kapitel'>('seite');
   const [searchFocused, setSearchFocused] = useState(false);
   const [soundOn, setSoundOn] = useState(false);
   const [aiOpen, setAiOpen] = useState(false);
@@ -120,10 +121,8 @@ export default function BookScreen() {
 
   function bulletMatches(bullet: BulletPoint) {
     if (!isFiltering) return true;
-    return (
-      (bullet.pages?.includes(filterNum) ?? false) ||
-      (bullet.chapters?.includes(filterNum) ?? false)
-    );
+    if (searchMode === 'seite') return bullet.pages?.includes(filterNum) ?? false;
+    return bullet.chapters?.includes(filterNum) ?? false;
   }
 
   async function sendMessage() {
@@ -235,11 +234,25 @@ export default function BookScreen() {
 
         {/* ── TOOLBAR ── */}
         <View style={styles.toolbar}>
+          <View style={[styles.searchToggle, { backgroundColor: accentMuted }]}>
+            {(['seite', 'kapitel'] as const).map((mode) => (
+              <TouchableOpacity
+                key={mode}
+                style={[styles.togglePill, searchMode === mode && styles.togglePillActive]}
+                onPress={() => { setSearchMode(mode); setFilter(''); }}
+                activeOpacity={0.8}
+              >
+                <Text style={[styles.toggleLabel, { color: searchMode === mode ? book.accentColor : Colors.colorDark }]}>
+                  {mode === 'seite' ? 'Seite' : 'Kapitel'}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
           <View style={[styles.searchContainer, { borderColor: searchFocused ? book.accentColor : 'transparent' }]}>
             <Icon name="explore" size="sm" color={Colors.grey500} />
             <TextInput
               style={styles.searchInput}
-              placeholder="Seite oder Kapitel eingeben…"
+              placeholder={searchMode === 'seite' ? 'Seitenzahl…' : 'Kapitelnummer…'}
               placeholderTextColor={Colors.grey500}
               keyboardType="number-pad"
               value={filter}
@@ -272,7 +285,9 @@ export default function BookScreen() {
           keyboardShouldPersistTaps="handled"
         >
           {!hasResults && isFiltering && (
-            <Text style={styles.noResults}>Keine Einträge für diese Seite / dieses Kapitel.</Text>
+            <Text style={styles.noResults}>
+              {searchMode === 'seite' ? 'Keine Einträge für diese Seite.' : 'Keine Einträge für dieses Kapitel.'}
+            </Text>
           )}
 
           {/* WICHTIGE PUNKTE */}
@@ -483,6 +498,24 @@ const styles = StyleSheet.create({
     gap: 12,
     borderBottomWidth: 1,
     borderBottomColor: Colors.grey200,
+  },
+  searchToggle: {
+    flexDirection: 'row',
+    borderRadius: 24,
+    padding: 4,
+  },
+  togglePill: {
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 20,
+    alignItems: 'center',
+  },
+  togglePillActive: {
+    backgroundColor: Colors.white,
+  },
+  toggleLabel: {
+    fontSize: 13,
+    fontWeight: '600',
   },
   searchContainer: {
     flex: 1,
