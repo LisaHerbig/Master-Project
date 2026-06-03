@@ -8,9 +8,11 @@ import { supabase } from '@/lib/supabase';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import {
+  Alert,
   Animated,
   Image,
   KeyboardAvoidingView,
+  Linking,
   PanResponder,
   Platform,
   ScrollView,
@@ -24,6 +26,39 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 const PANEL_CLOSED = 88;
 const PANEL_OPEN = 360;
+
+const URL_REGEX = /(https?:\/\/[^\s]+)/;
+
+function SourceText({ text, accentColor }: { text: string; accentColor: string }) {
+  const match = URL_REGEX.exec(text);
+  if (!match) {
+    return <Text style={sourceTextStyle}>{text}</Text>;
+  }
+  const before = text.slice(0, match.index);
+  const url = match[0];
+  return (
+    <Text style={sourceTextStyle}>
+      <Text style={{ fontStyle: 'italic' }}>{before}</Text>
+      <Text
+        style={{ color: accentColor, textDecorationLine: 'underline' }}
+        onPress={() =>
+          Alert.alert(
+            'Externe Website',
+            'Du wirst zu einer externen Website weitergeleitet. Möchtest du fortfahren?',
+            [
+              { text: 'Abbrechen', style: 'cancel' },
+              { text: 'Öffnen', onPress: () => Linking.openURL(url) },
+            ]
+          )
+        }
+      >
+        {url}
+      </Text>
+    </Text>
+  );
+}
+
+const sourceTextStyle = { flex: 1, fontSize: 13, color: Colors.grey500, lineHeight: 18 } as const;
 
 export default function BookScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -96,6 +131,7 @@ export default function BookScreen() {
 
   const scrollRef = useRef<ScrollView>(null);
   const sourcesY = useRef(0);
+  const sourceRowYs = useRef<Map<number, number>>(new Map());
 
   // Auto-clear highlight after 2.5 s
   useEffect(() => {
@@ -104,11 +140,12 @@ export default function BookScreen() {
     return () => clearTimeout(t);
   }, [highlightedSource]);
 
-  // Scroll to sources when a ref is tapped (100 ms delay lets filter clear + re-render first)
+  // Scroll to the specific source row when a ref is tapped
   useEffect(() => {
     if (highlightedSource === null) return;
     const t = setTimeout(() => {
-      scrollRef.current?.scrollTo({ y: sourcesY.current - 16, animated: true });
+      const rowY = sourceRowYs.current.get(highlightedSource) ?? 0;
+      scrollRef.current?.scrollTo({ y: sourcesY.current + rowY - 16, animated: true });
     }, 100);
     return () => clearTimeout(t);
   }, [highlightedSource]);
@@ -175,25 +212,35 @@ export default function BookScreen() {
 
   function renderBulletText(text: string) {
     const parts = text.split(/(\[\d+\])/);
+    const tokens: Array<{ content: string; refId?: number }> = [];
+
+    parts.forEach(part => {
+      const refMatch = part.match(/^\[(\d+)\]$/);
+      if (refMatch) {
+        tokens.push({ content: part, refId: parseInt(refMatch[1]) });
+      } else {
+        // split into word-level tokens (including surrounding whitespace) so
+        // references flow truly inline instead of being pushed to a new row
+        (part.match(/\s*\S+\s*/g) ?? []).forEach(word => tokens.push({ content: word }));
+      }
+    });
+
     return (
-      <Text style={styles.bulletText}>
-        {parts.map((part, i) => {
-          const match = part.match(/^\[(\d+)\]$/);
-          if (match) {
-            const refId = parseInt(match[1], 10);
-            return (
-              <Text
-                key={i}
-                style={[styles.refLink, { color: book!.accentColor }]}
-                onPress={() => handleRefPress(refId)}
-              >
-                {part}
-              </Text>
-            );
-          }
-          return part;
-        })}
-      </Text>
+      <View style={styles.bulletTextRow}>
+        {tokens.map((token, i) =>
+          token.refId !== undefined ? (
+            <Text
+              key={i}
+              style={[styles.bulletText, styles.refLink, { color: book!.accentColor }]}
+              onPress={() => handleRefPress(token.refId!)}
+            >
+              {token.content}
+            </Text>
+          ) : (
+            <Text key={i} style={styles.bulletText}>{token.content}</Text>
+          )
+        )}
+      </View>
     );
   }
 
@@ -249,10 +296,10 @@ export default function BookScreen() {
             ))}
           </View>
           <View style={[styles.searchContainer, { borderColor: searchFocused ? book.accentColor : 'transparent' }]}>
-            <Icon name="explore" size="sm" color={Colors.grey500} />
+            <Icon name="explore" size="md" color={Colors.grey500} />
             <TextInput
               style={styles.searchInput}
-              placeholder={searchMode === 'seite' ? 'Seitenzahl…' : 'Kapitelnummer…'}
+              placeholder={searchMode === 'seite' ? 'z.B. 1' : 'z.B. 2'}
               placeholderTextColor={Colors.grey500}
               keyboardType="number-pad"
               value={filter}
@@ -321,7 +368,7 @@ export default function BookScreen() {
           {/* SOURCES — only when not filtering */}
           {!isFiltering && (
             <View
-              style={styles.section}
+              style={[styles.section, styles.sourcesSection]}
               onLayout={(e) => { sourcesY.current = e.nativeEvent.layout.y; }}
             >
               <Text style={styles.sectionTitle}>QUELLEN</Text>
@@ -332,9 +379,10 @@ export default function BookScreen() {
                     styles.sourceRow,
                     highlightedSource === source.id && { backgroundColor: accentMuted, borderRadius: 8, padding: 8, marginHorizontal: -8 },
                   ]}
+                  onLayout={(e) => { sourceRowYs.current.set(source.id, e.nativeEvent.layout.y); }}
                 >
                   <Text style={[styles.sourceRef, { color: book.accentColor }]}>[{source.id}]</Text>
-                  <Text style={styles.sourceText}>{source.text}</Text>
+                  <SourceText text={source.text} accentColor={book.accentColor} />
                 </View>
               ))}
             </View>
@@ -503,12 +551,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     borderRadius: 24,
     padding: 4,
+    alignSelf: 'stretch',
+    justifyContent: 'center',
   },
   togglePill: {
     paddingHorizontal: 14,
     paddingVertical: 6,
     borderRadius: 20,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   togglePillActive: {
     backgroundColor: Colors.white,
@@ -550,11 +601,17 @@ const styles = StyleSheet.create({
     marginBottom: 32,
     gap: 12,
   },
+  sourcesSection: {
+    borderTopWidth: 1,
+    borderTopColor: Colors.grey200,
+    paddingTop: 32,
+  },
   sectionTitle: {
     fontFamily: Fonts.serif,
     fontSize: 16,
     letterSpacing: 1.5,
     color: Colors.colorDark,
+    marginTop: 20,
     marginBottom: 4,
   },
   numberedRow: {
@@ -589,8 +646,12 @@ const styles = StyleSheet.create({
     flexShrink: 0,
     backgroundColor: Colors.colorDark,
   },
-  bulletText: {
+  bulletTextRow: {
     flex: 1,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  bulletText: {
     fontSize: 15,
     color: Colors.colorDark,
     lineHeight: 22,
@@ -608,12 +669,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     flexShrink: 0,
     marginTop: 2,
-  },
-  sourceText: {
-    flex: 1,
-    fontSize: 13,
-    color: Colors.grey500,
-    lineHeight: 18,
   },
   noResults: {
     fontSize: 15,
