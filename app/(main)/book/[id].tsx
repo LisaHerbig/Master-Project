@@ -340,7 +340,7 @@ export default function BookScreen() {
           {/* WICHTIGE PUNKTE */}
           {filteredKeyPoints.length > 0 && (
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>WICHTIGE PUNKTE</Text>
+              <Text style={styles.sectionTitle}>TOP FÜNF FAKTEN</Text>
               {filteredKeyPoints.map((point, i) => (
                 <View key={i} style={styles.numberedRow}>
                   <View style={[styles.numberCircle, { borderColor: book.accentColor }]}>

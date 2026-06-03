@@ -210,9 +210,9 @@ const content: BookContent = {
     { id: 48, text: 'Bierwirth & Thomas (2019), zit.nach Bagheri, M. et al. (2024): "Implementing housing policies for a sufficient lifestyle", Buildings & Cities, Frauenhofer-Publica. S.301, verfügbar unter: https://publica-rest.fraunhofer.de/server/api/core/bitstreams/27ae97e6-3071-4a7c-bb70-633e79d5fefa/content' },
 
     //Soziale Isolation
-    { id: 49, text: 'Schnepf, Sylke V., d`Hombres, Béatrice, Mauri, Caterina (2024): Loneliness in Europe: Determinants, Risks and Interventions, S.3 Cham: Springer Nature Switzerland AG, verfügbar unter: https://link.springer.com/book/10.1007/978-3-031-66582-0' },
-    { id: 50, text: 'Schnepf, Sylke V., d`Hombres, Béatrice, Mauri, Caterina (2024): Loneliness in Europe: Determinants, Risks and Interventions, S.93 Cham: Springer Nature Switzerland AG, verfügbar unter: https://link.springer.com/book/10.1007/978-3-031-66582-0' },
-    { id: 51, text: 'Schnepf, Sylke V., d`Hombres, Béatrice, Mauri, Caterina (2024): Loneliness in Europe: Determinants, Risks and Interventions, S.51 Cham: Springer Nature Switzerland AG, verfügbar unter: https://link.springer.com/book/10.1007/978-3-031-66582-0' },
+    { id: 49, text: 'Schnepf, S. V., d`Hombres, B., Mauri, C. (2024): "Loneliness in Europe: Determinants, Risks and Interventions", Springer Nature. S.3, verfügbar unter: https://link.springer.com/book/10.1007/978-3-031-66582-0' },
+    { id: 50, text: 'Schnepf, S. V., d`Hombres, B., Mauri, C. (2024): "Loneliness in Europe: Determinants, Risks and Interventions", Springer Nature. S.93, verfügbar unter: https://link.springer.com/book/10.1007/978-3-031-66582-0' },
+    { id: 51, text: 'Schnepf, S. V., d`Hombres, B., Mauri, C. (2024): "Loneliness in Europe: Determinants, Risks and Interventions", Springer Nature. S.51, verfügbar unter: https://link.springer.com/book/10.1007/978-3-031-66582-0' },
 
     // Urbane Entwicklung
     { id: 52, text: 'Destatis - Statistisches Bundesamt (2026): "Bevölkerung - Großstadtregionen im Wandel", verfügbar unter: http://destatis.de/DE/Themen/Querschnitt/Demografischer-Wandel/Aspekte/demografie-grossstadtregionen.html' },
@@ -221,8 +221,8 @@ const content: BookContent = {
     
     //Soziale Isolation
     { id: 55, text: 'Landeshauptstadt Stuttgart - Gesundheitsamt und Amt für Umweltschutz (2025): "Hitzeaktionsplan der Landeshauptstadt Stuttgart", Stadtklima Stuttgart. S.15, verfügbar unter: https://www.stadtklima-stuttgart.de/index.php?klima_kliks_hitzeaktionsplan_stuttgart_2025#:~:text=Download%3A%20Hitzeaktionsplan%20Stuttgart%20Juni%202025%20(pdf%2C%2017%20MB)' },
-    { id: 56, text: 'Schnepf, Sylke V., d`Hombres, Béatrice, Mauri, Caterina (2024): Loneliness in Europe: Determinants, Risks and Interventions, S.4 Cham: Springer Nature Switzerland AG, verfügbar unter: https://link.springer.com/book/10.1007/978-3-031-66582-0' },
-    { id: 57, text: 'Schnepf, Sylke V., d`Hombres, Béatrice, Mauri, Caterina (2024): Loneliness in Europe: Determinants, Risks and Interventions, S.44, 57 Cham: Springer Nature Switzerland AG, verfügbar unter: https://link.springer.com/book/10.1007/978-3-031-66582-0' },
+    { id: 56, text: 'Schnepf, S. V., d`Hombres, B., Mauri, C. (2024): "Loneliness in Europe: Determinants, Risks and Interventions", Springer Nature. S.4, verfügbar unter: https://link.springer.com/book/10.1007/978-3-031-66582-0' },
+    { id: 57, text: 'Schnepf, S. V., d`Hombres, B., Mauri, C. (2024): "Loneliness in Europe: Determinants, Risks and Interventions", Springer Nature. S.44, 57, verfügbar unter: https://link.springer.com/book/10.1007/978-3-031-66582-0' },
     
     //Extremwetter
     { id: 58, text: 'Bassen, A. et al. (2024): "Hauptgutachten Wasser in einer aufgeheizten Welt", WBGU - Wissenschaftlicher Beirat der Bundesregierung Globale Umweltveränderungen. S.74, verfügbar unter: https://www.wbgu.de/fileadmin/user_upload/wbgu/publikationen/hauptgutachten/hg2024/pdf/wbgu_hg2024.pdf' },
