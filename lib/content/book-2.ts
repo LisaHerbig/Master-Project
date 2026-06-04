@@ -120,7 +120,7 @@ const content: BookContent = {
     { id: 22, text: 'Destatis - Statistisches Bundesamt (2026): "Bevölkerung - Großstadtregionen im Wandel", verfügbar unter: https://www.destatis.de/DE/Themen/Querschnitt/Demografischer-Wandel/Aspekte/demografie-grossstadtregionen.html' },
     { id: 23, text: 'ZukunftsInstitut (2025): "Megatrend Urbanisierung", verfügbar unter: https://www.zukunftsinstitut.de/zukunftsthemen/megatrend-urbanisierung' },
     { id: 24, text: 'Schnepf, S. V., d`Hombres, B., Mauri, C. (2024): "Loneliness in Europe: Determinants, Risks and Interventions", Springer Nature. S. 51, verfügbar unter: https://link.springer.com/book/10.1007/978-3-031-66582-0' },
-    { id: 25, text: '' },
+    
   
   ],
 };
