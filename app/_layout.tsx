@@ -6,7 +6,11 @@ import { EBGaramond_600SemiBold, useFonts } from '@expo-google-fonts/eb-garamond
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import { ActivityIndicator, LogBox, View } from 'react-native';
+
+// Supabase internally retries failed token refreshes and logs these before firing SIGNED_OUT.
+// The app handles this correctly — suppress the dev overlay noise.
+LogBox.ignoreLogs(['AuthRetryableFetchError', 'Network request failed']);
 
 SplashScreen.preventAutoHideAsync();
 

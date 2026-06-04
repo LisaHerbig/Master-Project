@@ -3,62 +3,42 @@ import { supabase } from '@/lib/supabase'
 import { PropsWithChildren, useEffect, useState } from 'react'
 
 export default function AuthProvider({ children }: PropsWithChildren) {
-  const [claims, setClaims] = useState<Record<string, any> | undefined | null>()
-  const [profile, setProfile] = useState<any>()
-  const [isLoading, setIsLoading] = useState<boolean>(true)
+  const [claims, setClaims] = useState<Record<string, any> | undefined | null>(undefined)
+  const [profile, setProfile] = useState<any>(null)
+  const [isLoading, setIsLoading] = useState(true)
 
-  // Fetch the claims once, and subscribe to auth state changes
   useEffect(() => {
-    const fetchClaims = async () => {
-      setIsLoading(true)
-
-      const { data, error } = await supabase.auth.getClaims()
-
-      if (error) {
-        console.error('Error fetching claims:', error)
-      }
-
-      setClaims(data?.claims ?? null)
-      setIsLoading(false)
-    }
-
-    fetchClaims()
-
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
-      console.log('Auth state changed:', { event: _event })
       if (session?.user) {
         setClaims({ ...session.user, sub: session.user.id })
       } else {
         setClaims(null)
+        setProfile(null)
+        setIsLoading(false)
       }
     })
 
-    // Cleanup subscription on unmount
-    return () => {
-      subscription.unsubscribe()
-    }
+    return () => subscription.unsubscribe()
   }, [])
 
-  // Fetch the profile when the claims change
   useEffect(() => {
+    if (!claims?.sub) return
+
     const fetchProfile = async () => {
       setIsLoading(true)
-
-      if (claims) {
+      try {
         const { data } = await supabase.from('profiles').select('*').eq('id', claims.sub).single()
-
-        setProfile(data)
-      } else {
+        setProfile(data ?? null)
+      } catch {
         setProfile(null)
+      } finally {
+        setIsLoading(false)
       }
-
-      setIsLoading(false)
     }
-
     fetchProfile()
-  }, [claims])
+  }, [claims?.sub])
 
   return (
     <AuthContext.Provider
