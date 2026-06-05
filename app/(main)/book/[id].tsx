@@ -2,6 +2,7 @@ import { BookPattern } from '@/components/atoms/book-pattern';
 import { Icon } from '@/components/atoms/icon';
 import { Colors, Fonts } from '@/constants/theme';
 import { BOOKS } from '@/lib/books';
+import { AI_BOOK_CONTEXTS } from '@/lib/content/ai-contexts';
 import { getBookContent } from '@/lib/content';
 import { BulletPoint } from '@/lib/content/types';
 import { supabase } from '@/lib/supabase';
@@ -178,6 +179,7 @@ export default function BookScreen() {
           history: chatHistory,
           bookTitle: book!.title,
           seriesTitle: book!.seriesTitle,
+          bookContext: AI_BOOK_CONTEXTS[book!.id] ?? null,
         },
       });
       if (error) {

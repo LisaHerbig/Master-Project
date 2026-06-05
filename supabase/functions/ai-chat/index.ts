@@ -51,14 +51,19 @@ Deno.serve(async (req) => {
       })
     }
 
-    const { message, history, bookTitle, seriesTitle }: {
+    const { message, history, bookTitle, seriesTitle, bookContext }: {
       message: string
       history: Message[]
       bookTitle: string
       seriesTitle: string
+      bookContext?: string | null
     } = await req.json()
 
-    const systemPrompt = `Du bist ein hilfreicher Assistent für die Novellenreihe "${seriesTitle}". Der Nutzer liest gerade "${bookTitle}". Beantworte alle Fragen auf Deutsch. Du kannst aktuelle Informationen aus dem Internet suchen. Halte deine Antworten präzise und freundlich.`
+    const systemPrompt = [
+      `Du bist ein hilfreicher Leser-Assistent für die Novellenreihe "${seriesTitle}". Der Nutzer liest gerade "${bookTitle}".`,
+      bookContext ? `\nHier ist der Kontext zu diesem Buch:\n\n${bookContext}` : '',
+      `\nBeantworte alle Fragen auf Deutsch. Halte deine Antworten präzise und freundlich. Vermeide Spoiler – gib keine Informationen zu Handlungsentscheidungen oder Wendungen preis, die der Leser noch nicht erlebt haben könnte. Falls eine Frage Spoiler erfordern würde, weise freundlich darauf hin.`,
+    ].join('')
 
     const contents = [
       ...history.map((msg) => ({
