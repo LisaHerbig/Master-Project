@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mutatio – Buch freischalten</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'EB Garamond', serif;
+      background-color: #F6F6FF;
+      color: #01013A;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 32px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 380px;
+    }
+
+    .series {
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      color: #61616B;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    h1 {
+      font-size: 40px;
+      line-height: 48px;
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+
+    .subtitle {
+      font-size: 16px;
+      line-height: 24px;
+      color: #61616B;
+      margin-bottom: 40px;
+    }
+
+    label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      color: #61616B;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    input {
+      width: 100%;
+      padding: 14px 16px;
+      font-family: 'EB Garamond', serif;
+      font-size: 16px;
+      line-height: 24px;
+      border: 1.5px solid #D2D2D5;
+      border-radius: 12px;
+      background: #fff;
+      color: #01013A;
+      margin-bottom: 16px;
+      outline: none;
+      transition: border-color 0.2s;
+      -webkit-appearance: none;
+    }
+
+    input:focus { border-color: #0000DC; }
+
+    button {
+      width: 100%;
+      padding: 16px;
+      font-family: 'EB Garamond', serif;
+      font-size: 16px;
+      line-height: 24px;
+      font-weight: 600;
+      background: #01013A;
+      color: #fff;
+      border: none;
+      border-radius: 32px;
+      cursor: pointer;
+      margin-top: 8px;
+      transition: opacity 0.2s;
+      -webkit-appearance: none;
+    }
+
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .error-msg {
+      font-size: 14px;
+      line-height: 20px;
+      color: #D75B65;
+      margin-top: 12px;
+    }
+
+    .success-check {
+      font-size: 48px;
+      line-height: 1;
+      margin-bottom: 24px;
+      color: #0000DC;
+    }
+
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <div id="view-login">
+      <p class="series">Jenseits des Unmöglichen</p>
+      <h1 id="book-title">Buch freischalten</h1>
+      <p class="subtitle">Melde dich an, um den Inhalt deines Buches freizuschalten.</p>
+      <label for="email">E-Mail</label>
+      <input type="email" id="email" placeholder="deine@email.de" autocomplete="email" />
+      <label for="password">Passwort</label>
+      <input type="password" id="password" placeholder="••••••••" autocomplete="current-password" />
+      <button id="login-btn" onclick="handleLogin()">Freischalten</button>
+      <p class="error-msg hidden" id="error-msg"></p>
+    </div>
+
+    <div id="view-success" class="hidden">
+      <div class="success-check">✦</div>
+      <p class="series">Jenseits des Unmöglichen</p>
+      <h1 id="success-title">Freigeschaltet</h1>
+      <p class="subtitle" id="success-msg">Öffne die Mutatio-App, um den Inhalt zu lesen.</p>
+    </div>
+
+    <div id="view-error" class="hidden">
+      <p class="series">Mutatio</p>
+      <h1>Fehler</h1>
+      <p class="subtitle" id="error-detail">Ein unbekannter Fehler ist aufgetreten.</p>
+    </div>
+
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://pfuxpwrnnqdofcitqomv.supabase.co'
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBmdXhwd3JubnFkb2ZjaXRxb212Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ4MDI0NDMsImV4cCI6MjA5MDM3ODQ0M30.of2gERinjNO93r40V4fUehwlDDo3-2Laj4sR2s8TmeA'
+
+    const BOOK_TITLES = {
+      1: 'Das Fahrwasser',
+      2: 'Der Bodenwert',
+      3: 'Die Wagenburg',
+      4: 'Die Oase',
+      5: 'Der Schwamm',
+    }
+
+    const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+    const tagId = new URLSearchParams(window.location.search).get('tag')
+
+    function show(viewId) {
+      ['view-login', 'view-success', 'view-error'].forEach(id =>
+        document.getElementById(id).classList.toggle('hidden', id !== viewId)
+      )
+    }
+
+    function showFatalError(msg) {
+      document.getElementById('error-detail').textContent = msg
+      show('view-error')
+    }
+
+    if (!tagId) showFatalError('Kein NFC-Tag erkannt. Bitte scanne den Sticker erneut.')
+
+    async function handleLogin() {
+      const email = document.getElementById('email').value.trim()
+      const password = document.getElementById('password').value
+      const btn = document.getElementById('login-btn')
+      const errEl = document.getElementById('error-msg')
+
+      errEl.classList.add('hidden')
+      btn.disabled = true
+      btn.textContent = 'Bitte warten …'
+
+      try {
+        const { data: authData, error: authError } = await client.auth.signInWithPassword({ email, password })
+        if (authError) throw new Error('E-Mail oder Passwort ist falsch.')
+
+        const userId = authData.user.id
+
+        const { data: book } = await client
+          .from('books')
+          .select('id')
+          .eq('nfc_tag_id', tagId)
+          .single()
+
+        if (!book) throw new Error('Dieser Sticker ist noch keinem Buch zugeordnet.')
+
+        const { data: existing } = await client
+          .from('user_books')
+          .select('book_id')
+          .eq('user_id', userId)
+          .eq('book_id', book.id)
+          .single()
+
+        if (!existing) {
+          const { error: insertError } = await client.from('user_books').insert({
+            user_id: userId,
+            book_id: book.id,
+            unlocked_at: new Date().toISOString(),
+          })
+          if (insertError) throw new Error('Buch konnte nicht freigeschaltet werden.')
+        }
+
+        const title = BOOK_TITLES[book.id] ?? 'Dein Buch'
+        document.getElementById('success-title').textContent = title
+        document.getElementById('success-msg').textContent = existing
+          ? 'Dieses Buch ist bereits freigeschaltet. Öffne die Mutatio-App, um es zu lesen.'
+          : 'Öffne die Mutatio-App, um den Inhalt zu lesen.'
+        show('view-success')
+
+      } catch (e) {
+        errEl.textContent = e.message
+        errEl.classList.remove('hidden')
+        btn.disabled = false
+        btn.textContent = 'Freischalten'
+      }
+    }
+
+    document.getElementById('password')?.addEventListener('keydown', e => {
+      if (e.key === 'Enter') handleLogin()
+    })
+  </script>
+</body>
+</html>
