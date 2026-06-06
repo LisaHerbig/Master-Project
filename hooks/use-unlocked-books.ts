@@ -1,26 +1,25 @@
 import { useAuthContext } from '@/hooks/use-auth-context';
 import { supabase } from '@/lib/supabase';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 export function useUnlockedBooks() {
   const { claims } = useAuthContext();
   const [unlockedIds, setUnlockedIds] = useState<Set<number>>(new Set());
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const fetchUnlocked = useCallback(async () => {
     if (!claims?.sub) {
       setLoading(false);
       return;
     }
-
-    supabase
-      .from('user_books')
-      .select('book_id')
-      .then(({ data }) => {
-        if (data) setUnlockedIds(new Set(data.map((r) => r.book_id as number)));
-        setLoading(false);
-      });
+    const { data } = await supabase.from('user_books').select('book_id');
+    if (data) setUnlockedIds(new Set(data.map((r) => r.book_id as number)));
+    setLoading(false);
   }, [claims?.sub]);
 
-  return { unlockedIds, loading };
+  useEffect(() => {
+    fetchUnlocked();
+  }, [fetchUnlocked]);
+
+  return { unlockedIds, loading, refresh: fetchUnlocked };
 }
