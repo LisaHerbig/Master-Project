@@ -28,6 +28,7 @@
     }
 
     .series {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
       font-size: 12px;
       font-weight: 600;
       letter-spacing: 0.12em;
@@ -40,6 +41,7 @@
       font-size: 40px;
       line-height: 48px;
       font-weight: 600;
+      text-transform: uppercase;
       margin-bottom: 12px;
     }
 
@@ -74,25 +76,27 @@
       outline: none;
       transition: border-color 0.2s;
       -webkit-appearance: none;
+      appearance: none;
     }
 
     input:focus { border-color: #0000DC; }
 
     button {
       width: 100%;
-      padding: 16px;
-      font-family: 'EB Garamond', serif;
+      padding: 16px 24px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
       font-size: 16px;
-      line-height: 24px;
+      line-height: 20px;
       font-weight: 600;
-      background: #01013A;
+      background: #0000DC;
       color: #fff;
       border: none;
-      border-radius: 32px;
+      border-radius: 999px;
       cursor: pointer;
       margin-top: 8px;
       transition: opacity 0.2s;
       -webkit-appearance: none;
+      appearance: none;
     }
 
     button:disabled { opacity: 0.5; cursor: not-allowed; }
@@ -112,9 +116,22 @@
     }
 
     .hidden { display: none; }
+
+    #pattern-bg {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .container {
+      position: relative;
+      z-index: 1;
+    }
   </style>
 </head>
 <body>
+  <div id="pattern-bg"></div>
   <div class="container">
 
     <div id="view-login">
@@ -154,6 +171,31 @@
       3: 'Die Wagenburg',
       4: 'Die Oase',
       5: 'Der Schwamm',
+    }
+
+    const BOOK_COLORS = {
+      1: '#0000DC',
+      2: '#5C00DC',
+      3: '#00A3DC',
+      4: '#0055DC',
+      5: '#000095',
+    }
+
+    const PATTERN_DEFS = {
+      wave:     c => `<pattern id="p" x="0" y="0" width="48" height="24" patternUnits="userSpaceOnUse"><path d="M0,12 Q12,0 24,12 Q36,24 48,12" fill="none" stroke="${c}" stroke-width="1.5"/></pattern>`,
+      lines:    c => `<pattern id="p" x="0" y="0" width="48" height="14" patternUnits="userSpaceOnUse"><path d="M0,7 L48,7" stroke="${c}" stroke-width="1"/></pattern>`,
+      dots:     c => `<pattern id="p" x="0" y="0" width="18" height="18" patternUnits="userSpaceOnUse"><circle cx="9" cy="9" r="2" fill="${c}"/></pattern>`,
+      dashes:   c => `<pattern id="p" x="0" y="0" width="24" height="18" patternUnits="userSpaceOnUse"><path d="M4,9 L16,9" stroke="${c}" stroke-width="1.5" stroke-linecap="round"/></pattern>`,
+      diamonds: c => `<pattern id="p" x="0" y="0" width="24" height="24" patternUnits="userSpaceOnUse"><path d="M12,2 L22,12 L12,22 L2,12 Z" fill="none" stroke="${c}" stroke-width="1"/></pattern>`,
+    }
+
+    const BOOK_PATTERN_TYPES = { 1: 'wave', 2: 'lines', 3: 'dots', 4: 'dashes', 5: 'diamonds' }
+
+    function showPattern(bookId) {
+      const color = BOOK_COLORS[bookId] ?? '#0000DC'
+      const def = PATTERN_DEFS[BOOK_PATTERN_TYPES[bookId] ?? 'wave'](color)
+      document.getElementById('pattern-bg').innerHTML =
+        `<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%"><defs>${def}</defs><rect width="100%" height="100%" fill="url(#p)" opacity="0.07"/></svg>`
     }
 
     const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
@@ -217,6 +259,7 @@
         document.getElementById('success-msg').textContent = existing
           ? 'Dieses Buch ist bereits freigeschaltet. Öffne die Mutatio-App, um es zu lesen.'
           : 'Öffne die Mutatio-App, um den Inhalt zu lesen.'
+        showPattern(book.id)
         show('view-success')
 
       } catch (e) {

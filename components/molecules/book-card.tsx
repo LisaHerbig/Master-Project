@@ -75,6 +75,8 @@ const styles = StyleSheet.create({
     width: '80%',
     height: 200,
     alignSelf: 'flex-end',
+    marginRight: -40,
+    marginTop: 20,
   },
   content: {
     paddingVertical: 20,

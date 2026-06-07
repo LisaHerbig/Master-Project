@@ -5,6 +5,7 @@ import { useNfcScan } from '@/hooks/use-nfc-scan';
 import { useUnlockedBooks } from '@/hooks/use-unlocked-books';
 import { Book, BOOKS } from '@/lib/books';
 import { supabase } from '@/lib/supabase';
+import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { Alert, AppState, Dimensions, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -32,7 +33,7 @@ export default function HomeScreen() {
   }, [refresh]);
 
   const scrollRef = useRef<ScrollView>(null);
-  const [centeredBookId, setCenteredBookId] = useState(BOOKS[0].id);
+  const isNavigating = useRef(false);
   const [bubbleBook, setBubbleBook] = useState<Book | null>(null);
 
   const handleScan = async () => {
@@ -54,25 +55,11 @@ export default function HomeScreen() {
       <View style={styles.header}>
         <Text style={styles.greeting}>HALLO{firstName ? ',' : ''}</Text>
         {firstName ? <Text style={styles.greeting}>{firstName.toUpperCase()}</Text> : null}
-        <Text style={styles.subtitle}>DEINE BÜCHER – IN EINER WELT VON MORGEN</Text>
-        <Text style={styles.body}>
-          Entdecke exklusive Inhalte über die Geschichte, insbesondere die Welt und ihre Zukunft.
+        <Text style={styles.subtitle}>
+          Entdecke mehr über die Geschichten, unsere Welt und ihre Zukunft.
         </Text>
-      </View>
-
-      {/* DEV ONLY */}
-      <View style={styles.devRow}>
-        <TouchableOpacity
-          style={styles.testButton}
-          onPress={() => router.push({ pathname: '/(main)/unlocked', params: { bookId: String(centeredBookId) } } as any)}
-        >
-          <Text style={styles.testButtonLabel}>🧪 Test Unlock Screen</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.testButton}
-          onPress={() => supabase.auth.signOut()}
-        >
-          <Text style={styles.testButtonLabel}>🚪 Logout</Text>
+        <TouchableOpacity style={styles.logoutButton} onPress={() => supabase.auth.signOut()}>
+          <Ionicons name="log-out-outline" size={24} color={Colors.colorDark} />
         </TouchableOpacity>
       </View>
 
@@ -89,8 +76,6 @@ export default function HomeScreen() {
         onMomentumScrollEnd={(e) => {
           const offsetX = e.nativeEvent.contentOffset.x;
           const index = Math.round(offsetX / SNAP_INTERVAL);
-          const bookIndex = ((index % BOOKS.length) + BOOKS.length) % BOOKS.length;
-          setCenteredBookId(BOOKS[bookIndex].id);
 
           if (index < BOOKS.length) {
             scrollRef.current?.scrollTo({ x: (index + BOOKS.length) * SNAP_INTERVAL, animated: false });
@@ -107,8 +92,11 @@ export default function HomeScreen() {
             width={CARD_WIDTH}
             onPress={() => {
               if (unlockedIds.has(book.id)) {
+                if (isNavigating.current) return;
+                isNavigating.current = true;
                 setBubbleBook(null);
                 router.push(`/(main)/book/${book.id}` as any);
+                setTimeout(() => { isNavigating.current = false; }, 1000);
               } else {
                 setBubbleBook(prev => prev?.id === book.id ? null : book);
               }
@@ -153,7 +141,7 @@ const styles = StyleSheet.create({
   header: {
     paddingHorizontal: 32,
     paddingTop: 40,
-    paddingBottom: 40,
+    paddingBottom: 24,
   },
   greeting: {
     fontFamily: 'EBGaramond_600SemiBold',
@@ -165,13 +153,27 @@ const styles = StyleSheet.create({
   subtitle: {
     fontFamily: 'EBGaramond_600SemiBold',
     fontSize: 18,
-    lineHeight: 26,
+    lineHeight: 28,
     color: Colors.colorDark,
     marginBottom: 12,
+    textTransform: 'uppercase',
+    paddingRight: 48,
   },
   body: {
     ...Typography.b2Regular,
     color: Colors.grey500,
+  },
+  logoutButton: {
+    position: 'absolute',
+    top: 40,
+    right: 32,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 1.5,
+    borderColor: Colors.colorDark,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   scroll: {
     flexGrow: 0,
@@ -182,9 +184,10 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
   },
   bubbleWrapper: {
-    paddingHorizontal: SIDE_PADDING,
-    paddingTop: 8,
-    paddingBottom: 24,
+    position: 'absolute',
+    bottom: 56,
+    left: SIDE_PADDING,
+    right: SIDE_PADDING,
   },
   bubbleTail: {
     alignSelf: 'center',
@@ -205,25 +208,6 @@ const styles = StyleSheet.create({
   bubbleText: {
     ...Typography.b2Regular,
     color: Colors.colorDark,
-  },
-  devRow: {
-    flexDirection: 'row',
-    marginHorizontal: 32,
-    marginBottom: 12,
-    gap: 8,
-  },
-  testButton: {
-    flex: 1,
-    marginBottom: 0,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    backgroundColor: Colors.grey200,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  testButtonLabel: {
-    ...Typography.b3Medium,
-    color: Colors.grey600,
   },
   scanRow: {
     paddingHorizontal: 32,
