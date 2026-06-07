@@ -12,6 +12,7 @@ import {
   Alert,
   Animated,
   Image,
+  Keyboard,
   KeyboardAvoidingView,
   Linking,
   PanResponder,
@@ -167,6 +168,7 @@ export default function BookScreen() {
     if (!aiInput.trim() || isLoading) return;
     const userText = aiInput.trim();
     setAiInput('');
+    Keyboard.dismiss();
     setIsLoading(true);
 
     const updatedHistory = [...chatHistory, { role: 'user' as const, text: userText }];
@@ -390,6 +392,13 @@ export default function BookScreen() {
             </View>
           )}
 
+          <TouchableOpacity
+            style={[styles.backToTopButton, { backgroundColor: accentMuted }]}
+            onPress={() => scrollRef.current?.scrollTo({ y: 0, animated: true })}
+          >
+            <Text style={styles.backToTopLabel}>↑ Nach oben</Text>
+          </TouchableOpacity>
+
           <View style={{ height: 320 }} />
         </ScrollView>
 
@@ -426,6 +435,7 @@ export default function BookScreen() {
               <ScrollView
                 ref={chatScrollRef}
                 style={styles.chatMessages}
+                contentContainerStyle={styles.chatMessagesContent}
                 onContentSizeChange={() => chatScrollRef.current?.scrollToEnd({ animated: true })}
                 keyboardShouldPersistTaps="handled"
               >
@@ -454,30 +464,31 @@ export default function BookScreen() {
               </ScrollView>
             )}
 
-            {aiOpen && (
-              <View style={styles.aiInputRow}>
-                <TextInput
-                  style={[styles.aiInput, { borderColor: aiFocused ? book.accentColor : 'transparent' }]}
-                  placeholder="Stelle eine Frage…"
-                  placeholderTextColor={Colors.grey500}
-                  value={aiInput}
-                  onChangeText={setAiInput}
-                  onFocus={() => setAiFocused(true)}
-                  onBlur={() => setAiFocused(false)}
-                  onSubmitEditing={sendMessage}
-                  returnKeyType="send"
-                  multiline
-                />
-                <TouchableOpacity
-                  style={[styles.sendButton, { backgroundColor: book.accentColor }, isLoading && styles.sendButtonDisabled]}
-                  onPress={sendMessage}
-                  disabled={isLoading}
-                >
-                  <Icon name="send" size="md" color={Colors.white} />
-                </TouchableOpacity>
-              </View>
-            )}
           </Animated.View>
+        )}
+
+        {!searchFocused && aiOpen && (
+          <View style={[styles.aiInputRow, { bottom: 0, backgroundColor: accentMuted }]}>
+            <TextInput
+              style={[styles.aiInput, { borderColor: aiFocused ? book.accentColor : 'transparent' }]}
+              placeholder="Stelle eine Frage…"
+              placeholderTextColor={Colors.grey500}
+              value={aiInput}
+              onChangeText={setAiInput}
+              onFocus={() => setAiFocused(true)}
+              onBlur={() => setAiFocused(false)}
+              onSubmitEditing={sendMessage}
+              returnKeyType="send"
+              multiline
+            />
+            <TouchableOpacity
+              style={[styles.sendButton, { backgroundColor: book.accentColor }, isLoading && styles.sendButtonDisabled]}
+              onPress={sendMessage}
+              disabled={isLoading}
+            >
+              <Icon name="send" size="md" color={Colors.white} />
+            </TouchableOpacity>
+          </View>
         )}
         </View>
       </SafeAreaView>
@@ -672,6 +683,19 @@ const styles = StyleSheet.create({
     flexShrink: 0,
     marginTop: 2,
   },
+  backToTopButton: {
+    alignSelf: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+    borderRadius: 24,
+    marginBottom: 8,
+  },
+  backToTopLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    letterSpacing: 0.5,
+    color: Colors.colorDark,
+  },
   noResults: {
     fontSize: 15,
     color: Colors.grey500,
@@ -725,6 +749,9 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 24,
   },
+  chatMessagesContent: {
+    paddingBottom: 69,
+  },
   messageBubble: {
     borderRadius: 16,
     paddingHorizontal: 14,
@@ -757,6 +784,9 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   aiInputRow: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
     flexDirection: 'row',
     alignItems: 'flex-end',
     gap: 12,

@@ -7,10 +7,10 @@
     "scheme": "mutatio",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/hands/Image_Hand_AppIcon.png",
     "ios": {
       "supportsTablet": true,
-      "icon": "./assets/images/icon.png",
+      "icon": "./assets/hands/Image_Hand_AppIcon.png",
       "bundleIdentifier": "com.lisasila.mutatio",
       "infoPlist": {
         "NFCReaderUsageDescription": "Scanne den NFC-Sticker in deinem Buch, um den Inhalt freizuschalten."
@@ -18,7 +18,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/icon.png",
+        "foregroundImage": "./assets/hands/Image_Hand_AppIcon.png",
         "backgroundColor": "#E6F4FE"
       },
       "edgeToEdgeEnabled": true,
