@@ -3,11 +3,11 @@ import { BookContent } from './types';
 const content: BookContent = {
   bookId: 5,
   keyPoints: [
-    { text: '. [1]', pages: [], chapters: [] },
-    { text: '. [2]', pages: [], chapters: [] },
-    { text: '. [1]', pages: [], chapters: [] },
-    { text: '. [3]', pages: [], chapters: [] },
-    { text: '. [2]', pages: [], chapters: [] },
+    { text: 'Aufgrund längerer Trockenphasen und höheren Temperaturen im Sommer steigt die Waldbrandgefahr. Weitere Faktoren (Trockenschäden, geschwächte Bäume, Streu auf dem Waldboden das schnell austrocknet und entzundlich ist sowie lichte Kronen) verschärfen das Risiko. [2]', pages: [], chapters: [] },
+    { text: 'Der Klimawandel verändert die Berechnungsgrundlage für die Belastung von Infrastruktur hinsichtlich der Häufigkeit von Hochwasserereignissen und dem Bedarf an Überschwemmungsgebieten. [2]', pages: [], chapters: [] },
+    { text: 'Wetterextreme, darunter Starkregen, Hochwasser, Stürme, Dürren und Hitze werden häufiger und heftiger und sind keine Jahrhundertereignisse mehr sondern Teil der Realität auf die sich der Mensch einstellen muss. [6]', pages: [], chapters: [] },
+    { text: 'Waldbrände bedeuten für den Menschen Lebens- und Gesunheitsgefahr (Todesfälle durch Flächenbrände, Luftverschmutzung durch Rußpartikel) und senken die Lebensqualität. [20]', pages: [], chapters: [] },
+    { text: 'Der Anteil geschädigter einheimischer Bäume wird sich aufgrund von Trockenheit, steigenden Temperaturen und sinkender Grundwasserpegel jährlich erhöhen, während die Produktivität der Vegeation sinkt und die Anpassungsgrenze einiger Arten überschritten wird. [9]', pages: [], chapters: [] },
   ],
   sections: [
     {

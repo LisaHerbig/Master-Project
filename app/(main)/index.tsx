@@ -1,12 +1,13 @@
 import { BookCard } from '@/components/molecules';
 import { Colors, Typography } from '@/constants/theme';
 import { useAuthContext } from '@/hooks/use-auth-context';
+import { useNfcScan } from '@/hooks/use-nfc-scan';
 import { useUnlockedBooks } from '@/hooks/use-unlocked-books';
 import { Book, BOOKS } from '@/lib/books';
 import { supabase } from '@/lib/supabase';
 import { router } from 'expo-router';
-import { useRef, useState } from 'react';
-import { Dimensions, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Alert, AppState, Dimensions, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -19,12 +20,34 @@ const INITIAL_OFFSET = BOOKS.length * SNAP_INTERVAL;
 
 export default function HomeScreen() {
   const { profile } = useAuthContext();
-  const { unlockedIds } = useUnlockedBooks();
+  const { unlockedIds, refresh } = useUnlockedBooks();
+  const { isSupported, isScanning, startScan } = useNfcScan();
 
   const firstName = profile?.full_name?.split(' ')[0] ?? '';
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (nextState) => {
+      if (nextState === 'active') refresh();
+    });
+    return () => subscription.remove();
+  }, [refresh]);
+
   const scrollRef = useRef<ScrollView>(null);
   const [centeredBookId, setCenteredBookId] = useState(BOOKS[0].id);
   const [bubbleBook, setBubbleBook] = useState<Book | null>(null);
+
+  const handleScan = async () => {
+    const result = await startScan();
+    if (result.status === 'unlocked') {
+      await refresh();
+      router.push({ pathname: '/(main)/unlocked', params: { bookId: String(result.bookId) } } as any);
+    } else if (result.status === 'already_unlocked') {
+      router.push(`/(main)/book/${result.bookId}` as any);
+    } else if (result.status === 'not_found') {
+      Alert.alert('Sticker nicht erkannt', `Dieser Sticker ist noch keinem Buch zugeordnet.\n\nUID: ${result.uid}`);
+    } else if (result.status === 'error') {
+      Alert.alert('Fehler', result.message);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.root}>
@@ -102,6 +125,20 @@ export default function HomeScreen() {
               Dieser Inhalt ist noch nicht freigeschaltet. Scanne den Sticker im Buch mit deinem Smartphone, um den Inhalt freizuschalten.
             </Text>
           </View>
+        </View>
+      )}
+
+      {isSupported && (
+        <View style={styles.scanRow}>
+          <TouchableOpacity
+            style={[styles.scanButton, isScanning && styles.scanButtonActive]}
+            onPress={handleScan}
+            disabled={isScanning}
+          >
+            <Text style={styles.scanButtonLabel}>
+              {isScanning ? 'Warte auf Sticker …' : 'Buch scannen'}
+            </Text>
+          </TouchableOpacity>
         </View>
       )}
     </SafeAreaView>
@@ -187,5 +224,23 @@ const styles = StyleSheet.create({
   testButtonLabel: {
     ...Typography.b3Medium,
     color: Colors.grey600,
+  },
+  scanRow: {
+    paddingHorizontal: 32,
+    paddingTop: 16,
+    paddingBottom: 8,
+  },
+  scanButton: {
+    backgroundColor: Colors.colorDark,
+    borderRadius: 32,
+    paddingVertical: 16,
+    alignItems: 'center',
+  },
+  scanButtonActive: {
+    opacity: 0.5,
+  },
+  scanButtonLabel: {
+    ...Typography.b2Regular,
+    color: Colors.white,
   },
 });

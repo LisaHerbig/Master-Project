@@ -11,7 +11,10 @@
     "ios": {
       "supportsTablet": true,
       "icon": "./assets/images/icon.png",
-      "bundleIdentifier": "com.lisasila.mutatio"
+      "bundleIdentifier": "com.lisasila.mutatio",
+      "infoPlist": {
+        "NFCReaderUsageDescription": "Scanne den NFC-Sticker in deinem Buch, um den Inhalt freizuschalten."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -40,7 +43,8 @@
         }
       ],
       "expo-secure-store",
-      "expo-font"
+      "expo-font",
+      "react-native-nfc-manager"
     ],
     "experiments": {
       "typedRoutes": true,
