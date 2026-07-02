@@ -32,7 +32,7 @@ export default function OnboardingTwo() {
               <S2>IST ALLES MÖGLICH</S2>
             </View>
             <Text style={styles.body}>
-              Starte neu in diesem Buch, um einzigartige Inhalte und interessante Fakten zu entdecken.
+              Entdecke einzigartige Inhalte und interessante Fakten.
               Erlebe noch mehr über die Geschichten, stelle Fragen und tauche tief ein.
             </Text>
             <View style={styles.buttons}>
