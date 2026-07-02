@@ -3,9 +3,11 @@ import { Icon } from '@/components/atoms/icon';
 import { Colors, Fonts } from '@/constants/theme';
 import { BOOKS } from '@/lib/books';
 import { AI_BOOK_CONTEXTS } from '@/lib/content/ai-contexts';
+import { BOOK_AUDIO } from '@/lib/content/audio';
 import { getBookContent } from '@/lib/content';
 import { BulletPoint } from '@/lib/content/types';
 import { supabase } from '@/lib/supabase';
+import { Audio } from 'expo-av';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import {
@@ -62,6 +64,78 @@ function SourceText({ text, accentColor }: { text: string; accentColor: string }
 
 const sourceTextStyle = { flex: 1, fontSize: 13, color: Colors.grey500, lineHeight: 18 } as const;
 
+const BAR_COUNT = 28;
+const BAR_MAX_H = 20;
+const BAR_MIN_H = 2;
+
+const DURATIONS = Array.from({ length: BAR_COUNT }, (_, i) => 380 + ((i * 97) % 320));
+
+function AudioVisualizer({ playing, color }: { playing: boolean; color: string }) {
+  const bars = useRef(
+    Array.from({ length: BAR_COUNT }, () => new Animated.Value(BAR_MIN_H))
+  ).current;
+
+  useEffect(() => {
+    const animations = bars.map((bar, i) =>
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(bar, {
+            toValue: playing ? BAR_MIN_H + ((i * 37) % (BAR_MAX_H - BAR_MIN_H)) + 4 : BAR_MIN_H,
+            duration: DURATIONS[i] / 2,
+            useNativeDriver: false,
+          }),
+          Animated.timing(bar, {
+            toValue: playing ? BAR_MIN_H + ((i * 61 + 11) % (BAR_MAX_H - BAR_MIN_H)) + 2 : BAR_MIN_H,
+            duration: DURATIONS[i] / 2,
+            useNativeDriver: false,
+          }),
+        ])
+      )
+    );
+    animations.forEach((a) => a.start());
+    return () => animations.forEach((a) => a.stop());
+  }, [playing]);
+
+  if (!playing) {
+    return (
+      <View style={visualizerStyles.row}>
+        <View style={[visualizerStyles.solidLine, { backgroundColor: color }]} />
+      </View>
+    );
+  }
+
+  return (
+    <View style={visualizerStyles.row}>
+      {bars.map((bar, i) => (
+        <Animated.View
+          key={i}
+          style={[visualizerStyles.bar, { height: bar, backgroundColor: color }]}
+        />
+      ))}
+    </View>
+  );
+}
+
+const visualizerStyles = StyleSheet.create({
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    height: BAR_MAX_H + 8,
+    paddingHorizontal: 24,
+    paddingVertical: 4,
+  },
+  bar: {
+    width: 2.5,
+    borderRadius: 2,
+  },
+  solidLine: {
+    flex: 1,
+    height: 1.5,
+    borderRadius: 1,
+  },
+});
+
 export default function BookScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const book = BOOKS.find((b) => b.id === Number(id));
@@ -71,6 +145,7 @@ export default function BookScreen() {
   const [searchMode, setSearchMode] = useState<'seite' | 'kapitel'>('seite');
   const [searchFocused, setSearchFocused] = useState(false);
   const [soundOn, setSoundOn] = useState(false);
+  const soundRef = useRef<Audio.Sound | null>(null);
   const [aiOpen, setAiOpen] = useState(false);
   const [aiInput, setAiInput] = useState('');
   const [aiFocused, setAiFocused] = useState(false);
@@ -151,6 +226,40 @@ export default function BookScreen() {
     }, 100);
     return () => clearTimeout(t);
   }, [highlightedSource]);
+
+  // Load and auto-play audio when the screen opens
+  useEffect(() => {
+    const audioSource = BOOK_AUDIO[Number(id)];
+    if (!audioSource) return;
+
+    let sound: Audio.Sound;
+    async function loadAndPlay() {
+      await Audio.setAudioModeAsync({ playsInSilentModeIOS: true });
+      const { sound: s } = await Audio.Sound.createAsync(audioSource, { shouldPlay: true });
+      sound = s;
+      soundRef.current = sound;
+      setSoundOn(true);
+    }
+
+    loadAndPlay();
+
+    return () => {
+      sound?.unloadAsync();
+      soundRef.current = null;
+    };
+  }, [id]);
+
+  async function toggleSound() {
+    const sound = soundRef.current;
+    if (!sound) return;
+    if (soundOn) {
+      await sound.pauseAsync();
+      setSoundOn(false);
+    } else {
+      await sound.playAsync();
+      setSoundOn(true);
+    }
+  }
 
   if (!book || !content) return null;
 
@@ -318,10 +427,12 @@ export default function BookScreen() {
               </TouchableOpacity>
             )}
           </View>
-          <TouchableOpacity style={styles.ttsButton} onPress={() => setSoundOn((s) => !s)}>
+          <TouchableOpacity style={styles.ttsButton} onPress={toggleSound}>
             <Icon name={soundOn ? 'mute' : 'sound'} size={40} color={book.accentColor} />
           </TouchableOpacity>
         </View>
+
+        <AudioVisualizer playing={soundOn} color={book.accentColor} />
 
         {/* ── CONTENT AREA (measured so AI panel never overflows) ── */}
         <View
@@ -557,8 +668,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingVertical: 12,
     gap: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.grey200,
   },
   searchToggle: {
     flexDirection: 'row',
