@@ -1,16 +1,16 @@
 {
   "expo": {
-    "name": "mutatio",
+    "name": "Jenseits des Unmöglichen",
     "slug": "mutatio",
     "version": "1.0.0",
     "orientation": "portrait",
     "scheme": "mutatio",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
-    "icon": "./assets/hands/Image_Hand_AppIcon.png",
+    "icon": "./assets/hands/Image_Hand_AppIcon.jpg",
     "ios": {
       "supportsTablet": true,
-      "icon": "./assets/hands/Image_Hand_AppIcon.png",
+      "icon": "./assets/hands/Image_Hand_AppIcon.jpg",
       "bundleIdentifier": "com.lisasila.mutatio",
       "infoPlist": {
         "NFCReaderUsageDescription": "Scanne den NFC-Sticker in deinem Buch, um den Inhalt freizuschalten."
@@ -18,7 +18,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/hands/Image_Hand_AppIcon.png",
+        "foregroundImage": "./assets/hands/Image_Hand_AppIcon.jpg",
         "backgroundColor": "#E6F4FE"
       },
       "edgeToEdgeEnabled": true,
