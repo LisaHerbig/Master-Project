@@ -11,7 +11,7 @@ config.transformer = {
 
 config.resolver = {
   ...resolver,
-  assetExts: resolver.assetExts.filter((ext) => ext !== 'svg'),
+  assetExts: [...resolver.assetExts.filter((ext) => ext !== 'svg'), 'mp3', 'm4a'],
   sourceExts: [...resolver.sourceExts, 'svg'],
 };
 
