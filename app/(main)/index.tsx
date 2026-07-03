@@ -35,6 +35,7 @@ export default function HomeScreen() {
   const scrollRef = useRef<ScrollView>(null);
   const isNavigating = useRef(false);
   const [bubbleBook, setBubbleBook] = useState<Book | null>(null);
+  const [unknownTagUid, setUnknownTagUid] = useState<string | null>(null);
 
   const handleScan = async () => {
     const result = await startScan();
@@ -44,7 +45,7 @@ export default function HomeScreen() {
     } else if (result.status === 'already_unlocked') {
       router.push(`/(main)/book/${result.bookId}` as any);
     } else if (result.status === 'not_found') {
-      Alert.alert('Sticker nicht erkannt', `Dieser Sticker ist noch keinem Buch zugeordnet.\n\nUID: ${result.uid}`);
+      setUnknownTagUid(result.uid);
     } else if (result.status === 'error') {
       Alert.alert('Fehler', result.message);
     }
@@ -120,13 +121,16 @@ export default function HomeScreen() {
         <View style={styles.scanRow}>
           <TouchableOpacity
             style={[styles.scanButton, isScanning && styles.scanButtonActive]}
-            onPress={handleScan}
+            onPress={() => { setUnknownTagUid(null); handleScan(); }}
             disabled={isScanning}
           >
             <Text style={styles.scanButtonLabel}>
               {isScanning ? 'Warte auf Sticker …' : 'Buch scannen'}
             </Text>
           </TouchableOpacity>
+          {unknownTagUid && (
+            <Text style={styles.debugText}>Uups, falscher Tag – UID: {unknownTagUid}</Text>
+          )}
         </View>
       )}
     </SafeAreaView>
@@ -226,5 +230,11 @@ const styles = StyleSheet.create({
   scanButtonLabel: {
     ...Typography.b2Regular,
     color: Colors.white,
+  },
+  debugText: {
+    ...Typography.b2Regular,
+    color: Colors.grey500,
+    textAlign: 'center',
+    marginTop: 8,
   },
 });
