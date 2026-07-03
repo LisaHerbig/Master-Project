@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -148,7 +149,7 @@
       <div id="success-icon" class="success-check"></div>
       <p class="series">Jenseits des Unmöglichen</p>
       <h1 id="success-title">Freigeschaltet</h1>
-      <p class="subtitle" id="success-msg">Öffne die Mutatio-App, um den Inhalt zu lesen.</p>
+      <p class="subtitle" id="success-msg">Öffne die Jenseits des Unmöglichen-App, um den Inhalt zu lesen.</p>
     </div>
 
     <div id="view-error" class="hidden">
@@ -270,10 +271,16 @@
         const title = BOOK_TITLES[book.id] ?? 'Dein Buch'
         document.getElementById('success-title').textContent = title
         document.getElementById('success-msg').textContent = existing
-          ? 'Dieses Buch ist bereits freigeschaltet. Öffne die Mutatio-App, um es zu lesen.'
-          : 'Öffne die Mutatio-App, um den Inhalt zu lesen.'
+          ? 'Dieses Buch ist bereits freigeschaltet. Öffne die Jenseits des Unmöglichen-App, um es zu lesen.'
+          : 'Öffne die Jenseits des Unmöglichen-App, um den Inhalt zu lesen.'
         showPattern(book.id)
         show('view-success')
+
+        if (!existing) {
+          const color = BOOK_COLORS[book.id] ?? '#0000DC'
+          confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 }, colors: [color, '#ffffff', color + '99'] })
+          setTimeout(() => confetti({ particleCount: 60, spread: 120, origin: { y: 0.5 }, colors: [color, '#ffffff'] }), 400)
+        }
 
       } catch (e) {
         errEl.textContent = e.message
