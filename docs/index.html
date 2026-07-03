@@ -241,13 +241,15 @@
 
         const userId = authData.user.id
 
-        const { data: book } = await client
-          .from('books')
-          .select('id')
-          .eq('nfc_tag_id', tagId)
+        const { data: nfcTag } = await client
+          .from('nfc_tags')
+          .select('book_id')
+          .eq('tag_uid', tagId)
           .single()
 
-        if (!book) throw new Error('Dieser Sticker ist noch keinem Buch zugeordnet.')
+        if (!nfcTag) throw new Error('Dieser Sticker ist noch keinem Buch zugeordnet.')
+
+        const book = { id: nfcTag.book_id }
 
         const { data: existing } = await client
           .from('user_books')

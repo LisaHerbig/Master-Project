@@ -44,31 +44,31 @@ export function useNfcScan() {
 
       if (!uid) return { status: 'error', message: 'Tag konnte nicht gelesen werden.' }
 
-      const { data: book } = await supabase
-        .from('books')
-        .select('id')
-        .eq('nfc_tag_id', uid)
+      const { data: nfcTag } = await supabase
+        .from('nfc_tags')
+        .select('book_id')
+        .eq('tag_uid', uid)
         .single()
 
-      if (!book) return { status: 'not_found', uid }
+      if (!nfcTag) return { status: 'not_found', uid }
 
       const { data: existing } = await supabase
         .from('user_books')
         .select('book_id')
-        .eq('book_id', book.id)
+        .eq('book_id', nfcTag.book_id)
         .single()
 
-      if (existing) return { status: 'already_unlocked', bookId: book.id }
+      if (existing) return { status: 'already_unlocked', bookId: nfcTag.book_id }
 
       const { error } = await supabase.from('user_books').insert({
         user_id: claims.sub,
-        book_id: book.id,
+        book_id: nfcTag.book_id,
         unlocked_at: new Date().toISOString(),
       })
 
       if (error) return { status: 'error', message: 'Buch konnte nicht freigeschaltet werden.' }
 
-      return { status: 'unlocked', bookId: book.id }
+      return { status: 'unlocked', bookId: nfcTag.book_id }
     } catch (e: any) {
       const msg: string = e?.message ?? ''
       if (msg.includes('cancel') || msg.includes('Cancel') || msg.includes('userCancel')) {
