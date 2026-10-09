@@ -1,0 +1,106 @@
+/* Phone mockup around the app iframe. The device is drawn at its real size
+   (390 × 844 screen) and scaled down by phone.js to fit the available space. */
+
+.phone-slot {
+  position: relative;
+  width: calc(414px * var(--phone-scale, 1));
+  height: calc(868px * var(--phone-scale, 1));
+  flex-shrink: 0;
+}
+
+.phone {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 414px;
+  height: 868px;
+  padding: 12px;
+  border-radius: 64px;
+  background: #01013A;
+  box-shadow:
+    0 0 0 2px #2A2A5C inset,
+    0 40px 80px -20px rgba(1, 1, 58, 0.45),
+    0 16px 32px -16px rgba(1, 1, 58, 0.35);
+  transform: scale(var(--phone-scale, 1));
+  transform-origin: top left;
+}
+
+/* Side buttons */
+.phone::before,
+.phone::after {
+  content: '';
+  position: absolute;
+  width: 4px;
+  border-radius: 2px;
+  background: #01013A;
+}
+.phone::before { left: -3px; top: 180px; height: 64px; box-shadow: 0 84px 0 #01013A; }
+.phone::after { right: -3px; top: 220px; height: 96px; }
+
+.phone-screen {
+  position: relative;
+  width: 390px;
+  height: 844px;
+  border-radius: 52px;
+  overflow: hidden;
+  background: #F6F6FF;
+  display: flex;
+  flex-direction: column;
+}
+
+.phone-status {
+  height: 50px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 34px 0 42px;
+  font: 600 16px/1 -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  color: #01013A;
+  position: relative;
+}
+
+.phone-island {
+  position: absolute;
+  top: 11px;
+  left: 50%;
+  width: 122px;
+  height: 36px;
+  margin-left: -61px;
+  border-radius: 20px;
+  background: #000;
+}
+
+.phone-status-icons {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.phone-frame {
+  flex: 1;
+  width: 100%;
+  border: 0;
+  display: block;
+  background: #F6F6FF;
+}
+
+/* Laid over the app so the app reaches the bottom edge of the screen */
+.phone-home {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+.phone-home::after {
+  content: '';
+  width: 134px;
+  height: 5px;
+  border-radius: 3px;
+  background: #01013A;
+}
