@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Jenseits des Unmöglichen – App-Demo</title>
+  <link rel="stylesheet" href="phone.css" />
+  <style>
+    /* Only the phone, for embedding in another page via iframe. Background stays transparent. */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; background: transparent; }
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      color: #01013A;
+    }
+    .stage {
+      flex: 1;
+      min-height: 0;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 16px 8px;
+    }
+    .reset {
+      margin: 4px 0 12px;
+      background: none;
+      border: 0;
+      font: 500 13px/1.4 inherit;
+      font-family: inherit;
+      color: #61616B;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+      cursor: pointer;
+    }
+    .reset:hover { color: #0000DC; }
+  </style>
+</head>
+<body>
+  <div class="stage">
+    <div class="phone-slot" id="phone-slot">
+      <div class="phone">
+        <div class="phone-screen">
+          <div class="phone-status">
+            <span class="phone-time">9:41</span>
+            <span class="phone-island"></span>
+            <span class="phone-status-icons" aria-hidden="true">
+              <svg width="18" height="12" viewBox="0 0 18 12"><rect x="0" y="8" width="3" height="4" rx="1" fill="currentColor"/><rect x="5" y="5.5" width="3" height="6.5" rx="1" fill="currentColor"/><rect x="10" y="3" width="3" height="9" rx="1" fill="currentColor"/><rect x="15" y="0" width="3" height="12" rx="1" fill="currentColor"/></svg>
+              <svg width="26" height="12" viewBox="0 0 26 12"><rect x="0.5" y="0.5" width="22" height="11" rx="3.5" fill="none" stroke="currentColor" opacity="0.4"/><rect x="2" y="2" width="19" height="8" rx="2" fill="currentColor"/><rect x="24" y="4" width="1.5" height="4" rx="0.75" fill="currentColor" opacity="0.4"/></svg>
+            </span>
+          </div>
+          <iframe
+            class="phone-frame"
+            id="app-frame"
+            src="app/"
+            data-src="app/"
+            title="App-Demo „Jenseits des Unmöglichen“"
+          ></iframe>
+          <div class="phone-home"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <button class="reset" id="reset" type="button">Demo zurücksetzen</button>
+
+  <script src="phone.js"></script>
+  <script>
+    var frame = document.getElementById('app-frame');
+    DemoPhone.fitPhone(document.getElementById('phone-slot'));
+    DemoPhone.updateClock(document.querySelector('.phone-time'));
+    document.getElementById('reset').addEventListener('click', function () {
+      DemoPhone.resetDemo(frame);
+    });
+  </script>
+</body>
+</html>
