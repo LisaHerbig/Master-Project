@@ -2,6 +2,8 @@
 
 # dependencies
 node_modules/
+# The web demo export keeps its fonts under node_modules, GitHub Pages needs them
+!docs/demo/app/assets/node_modules/
 
 # Expo
 .expo/
